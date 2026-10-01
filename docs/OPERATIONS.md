@@ -14,6 +14,18 @@ Issue events trigger reconciliation; the schedule catches requests skipped when 
 
 The central bot uses only this repository's GITHUB_TOKEN. No organization PAT, GitHub App, source-repository workflow installation, product database, or release-token broker is needed. It cannot assign, modify, or merge in a source repository. Users and maintainers continue to use ordinary GitHub permissions there.
 
+## Source-comment guidance
+
+The `actions/claim-reply` composite action can be installed in each of the five source repositories with a full commit SHA pin. A separate `claim-reply.yml` workflow listens for created/edited issue comments and uses only that source repository's built-in token with `issues: write`. It checks out no code and receives no repository secrets. The central claim and award workflows keep their existing permissions and responsibilities.
+
+An open bounty issue receives guidance when a human comment starts with `/claim` on its own first nonblank line. Case and surrounding whitespace are accepted; quoted commands, code blocks, inline mentions and `/claim` arguments are ignored. Unassigned issues get a prefilled central claim-form link; the reply explicitly says the comment is not a reservation. An existing assignment to the commenter gets a confirmation, while an assignment to someone else directs them back to the board. The action never assigns issues or modifies the claim/award ledgers.
+
+Each caller must serialize runs by comment ID, retain `cancel-in-progress: false`, restrict the privileged job to exact `refs/heads/main`, and set a five-minute timeout. The action refetches the public issue and comment, checks current state, and recognizes only receipts from GitHub Actions' numeric bot identity. It scans at most 2,000 comments and fails without posting if it cannot finish that scan. Retries therefore do not intentionally duplicate an existing receipt; an API error fails the run. Comments are data and are never inserted into executable code.
+
+Existing comments are not processed retroactively. A maintainer may use Actions → Bounty claim guidance → Run workflow on main, supply the existing numeric comment ID, and leave `dry_run` enabled to inspect the response without posting. Disable dry-run only when a reply is intended. This recovery path uses the same current-state and duplicate checks. A manual maintainer reply is separate from a bot receipt; do not replay it merely to create another notification.
+
+An owner may assign a contributor directly as a manual claim. Source assignments are reflected as claimed on the board and take precedence over conflicting central reservations. They do not have the central form's automatic seven-day expiry. Never create a central claim issue under the maintainer's account as a substitute for the contributor's identity.
+
 ## Award record
 
 After verifying task acceptance, submit a reviewed change to data/awards.json:
