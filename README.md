@@ -17,7 +17,7 @@ npm run build
 python -m http.server 8765 --directory _site
 ```
 
-`npm run sync` reads the five public GitHub repositories. Set `GITHUB_TOKEN` for an authenticated API rate limit when appropriate; never put it in browser code. A failed sync fails the deployment and preserves the previously published site. The offline build uses an empty snapshot only for local preview and PR verification.
+`npm run sync` reads the five public GitHub repositories. Set `GITHUB_TOKEN` for an authenticated API rate limit when appropriate; never put it in browser code. A failed sync fails the deployment and preserves the previously published site. `npm run build:preview` permits an empty snapshot for offline CI checks. The deployment workflow uses `npm run build`, which requires a successful live sync in Actions.
 
 ## Maintenance
 

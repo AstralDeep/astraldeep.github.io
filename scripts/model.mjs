@@ -9,6 +9,11 @@ export function parseTask(value, config) {
   return { repository: match[1], number: Number(match[2]), key: taskKey(match[1], Number(match[2])) };
 }
 
+function accountId(user) {
+  if (!Number.isSafeInteger(user?.id) || user.id < 1 || typeof user.login !== 'string' || !/^[a-z\d][a-z\d-]{0,38}(?:\[bot\])?$/i.test(user.login)) throw new Error('Invalid GitHub account identity');
+  return user.id;
+}
+
 export function taskFromIssue(repository, issue, config) {
   const labels = issue.labels.map(label => typeof label === 'string' ? label : label.name);
   if (issue.pull_request || !labels.includes(config.bountyLabel)) return null;
@@ -20,6 +25,7 @@ export function taskFromIssue(repository, issue, config) {
     title: issue.title, url: `https://github.com/${repository}/issues/${issue.number}`,
     points, state: issue.state, stateReason: issue.state_reason,
     assignees: issue.assignees.map(user => user.login),
+    assigneeIds: issue.assignees.map(accountId),
     tracks: config.tracks.filter(track => labels.includes(`track:${track}`)),
     priority: labels.find(label => /^priority:P[123]$/.test(label))?.slice(9) || 'P3',
   };
@@ -37,13 +43,18 @@ export function reconcileClaims(previous, requests, tasks, config, now) {
   const requestMap = new Map(requests.map(issue => [String(issue.number), issue]));
   const taskMap = new Map(tasks.map(task => [task.key, task]));
   for (const [id, claim] of Object.entries(claims)) {
-    if (claim.status !== 'active') continue;
+    accountId({ id: claim.userId, login: claim.login });
     const request = requestMap.get(id);
+    if (request) {
+      if (accountId(request.user) !== claim.userId) throw new Error('Claim request owner does not match stored account');
+      claim.login = request.user.login;
+    }
+    if (claim.status !== 'active') continue;
     const task = taskMap.get(claim.key);
     if (!request || request.state !== 'open' || request.everClosed) claim.status = 'released';
     else if (Date.parse(claim.expiresAt) <= clock) claim.status = 'expired';
     else if (!task || task.state !== 'open') claim.status = 'finished';
-    else if (task.assignees.some(login => login.toLowerCase() !== claim.login.toLowerCase())) claim.status = 'superseded';
+    else if (task.assigneeIds.some(userId => userId !== claim.userId)) claim.status = 'superseded';
     if (claim.status !== 'active') claim.endedAt = now;
   }
   const active = Object.values(claims).filter(claim => claim.status === 'active');
@@ -52,16 +63,17 @@ export function reconcileClaims(previous, requests, tasks, config, now) {
     if (!request.labels.some(label => (label.name || label) === 'claim-request')) continue;
     const target = claimTarget(request.body || '', config);
     const task = target && taskMap.get(target.key);
+    const userId = accountId(request.user);
     const login = request.user.login;
     let reason = '';
     if (request.everClosed) reason = 'Closed claim requests cannot be reused. Open a new request.';
     else if (request.user.type !== 'User') reason = 'Claims must be made by a human GitHub account.';
     else if (!task || task.state !== 'open') reason = 'Choose an open, approved bounty from the board.';
-    else if (task.assignees.some(user => user.toLowerCase() !== login.toLowerCase())) reason = 'The source issue is assigned to another contributor.';
+    else if (task.assigneeIds.some(assigneeId => assigneeId !== userId)) reason = 'The source issue is assigned to another contributor.';
     else if (active.some(claim => claim.key === target.key)) reason = 'This bounty already has an active claim.';
-    else if (active.some(claim => claim.login.toLowerCase() === login.toLowerCase()) || tasks.some(item => item.state === 'open' && item.key !== target.key && item.assignees.some(user => user.toLowerCase() === login.toLowerCase()))) reason = 'Finish or release your existing bounty first.';
+    else if (active.some(claim => claim.userId === userId) || tasks.some(item => item.state === 'open' && item.key !== target.key && item.assigneeIds.includes(userId))) reason = 'Finish or release your existing bounty first.';
     const claim = {
-      request: request.number, login, key: target?.key || null, status: reason ? 'rejected' : 'active',
+      request: request.number, userId, login, key: target?.key || null, status: reason ? 'rejected' : 'active',
       reason, createdAt: now,
       expiresAt: new Date(clock + config.claimHours * 3600000).toISOString(),
     };
@@ -72,6 +84,7 @@ export function reconcileClaims(previous, requests, tasks, config, now) {
 }
 
 export function validateAwards(awards, tasks, config) {
+  config.awardApprovers.forEach(accountId);
   const seen = new Set();
   const prs = new Set();
   for (const award of awards) {
@@ -81,6 +94,7 @@ export function validateAwards(awards, tasks, config) {
     if (seen.has(task.key)) throw new Error('Duplicate task award');
     if (prs.has(award.pr)) throw new Error('A PR can only earn one bounty award');
     if (!config.points.includes(award.points) || award.points !== task.points) throw new Error('Award points must match the approved issue');
+    accountId({ id: award.userId, login: award.login });
     if (!/^[a-z\d](?:[a-z\d-]{0,38})$/i.test(award.login) || !Number.isSafeInteger(award.review) || award.review < 1) throw new Error('Invalid contributor or approval review');
     if (!new RegExp(`^https://github\\.com/${target.repository}/pull/[1-9]\\d*$`).test(award.pr)) throw new Error('Award PR must be in the task repository');
     if (!Number.isFinite(Date.parse(award.awardedAt))) throw new Error('Invalid award date');
@@ -90,18 +104,24 @@ export function validateAwards(awards, tasks, config) {
 }
 
 export function verifyAwardEvidence(award, pr, review, approvers) {
-  if (!pr.merged_at || pr.html_url !== award.pr || pr.user.login.toLowerCase() !== award.login.toLowerCase()) throw new Error('Award needs a merged PR by its credited contributor');
-  if (review.id !== award.review || review.state !== 'APPROVED' || review.user.login.toLowerCase() === award.login.toLowerCase()) throw new Error('An independent approval review is required');
-  if (!approvers.map(login => login.toLowerCase()).includes(review.user.login.toLowerCase())) throw new Error('Approving reviewer must be a configured award approver');
+  const authorId = accountId(pr.user);
+  const reviewerId = accountId(review.user);
+  if (!pr.merged_at || pr.html_url !== award.pr || authorId !== accountId({ id: award.userId, login: award.login })) throw new Error('Award needs a merged PR by its credited contributor');
+  if (review.id !== award.review || review.state !== 'APPROVED' || reviewerId === authorId) throw new Error('An independent approval review is required');
+  if (!approvers.map(accountId).includes(reviewerId)) throw new Error('Approving reviewer must be a configured award approver');
   if (Date.parse(review.submitted_at) > Date.parse(pr.merged_at) || Date.parse(award.awardedAt) < Date.parse(pr.merged_at)) throw new Error('Award and review dates do not match the merge');
   if (review.commit_id !== pr.head.sha) throw new Error('Approval must cover the merged PR head');
+  const attestations = typeof review.body === 'string' ? review.body.split(/\r?\n/).filter(line => /^\s*Bounty-issue\s*:/i.test(line)) : [];
+  if (attestations.length !== 1 || attestations[0] !== `Bounty-issue: ${award.issue}`) throw new Error('Approval must contain exactly one exact Bounty-issue attestation line');
+  return { ...award, displayLogin: pr.user.login };
 }
 
 export function summarize(tasks, claims, awards, now) {
   const people = new Map();
   for (const award of awards) {
-    const key = award.login.toLowerCase();
-    const person = people.get(key) || { login: award.login, points: 0, completed: 0 };
+    const key = accountId({ id: award.userId, login: award.displayLogin });
+    const person = people.get(key) || { userId: key, points: 0, completed: 0 };
+    person.login = award.displayLogin;
     person.points += award.points;
     person.completed += 1;
     people.set(key, person);

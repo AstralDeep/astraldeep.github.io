@@ -124,7 +124,7 @@ if (board) {
   if (byId('awards')) {
     if (!board.awards.length) byId('awards').append(element('p', 'Accepted work will appear here with its source issue, merged pull request, and awarded points.', 'muted'));
     for (const award of [...board.awards].sort((a, b) => b.awardedAt.localeCompare(a.awardedAt))) {
-      const row = element('div', undefined, 'award-line'); row.append(link(`${award.issue.split('/')[4]} #${award.issue.split('/').at(-1)}`, award.issue), element('span', `@${award.login} · ${award.points} points`), link('Merged pull request', award.pr)); byId('awards').append(row);
+      const row = element('div', undefined, 'award-line'); row.append(link(`${award.issue.split('/')[4]} #${award.issue.split('/').at(-1)}`, award.issue), element('span', `@${award.displayLogin} · ${award.points} points`), link('Merged pull request', award.pr)); byId('awards').append(row);
     }
   }
 } else if (byId('sync-status')) byId('sync-status').textContent = 'Snapshot unavailable. Check the source issues on GitHub.';

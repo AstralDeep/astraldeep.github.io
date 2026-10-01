@@ -8,7 +8,7 @@ The explicit public allowlist in data/config.json controls scope. Private or arc
 
 ## Claim coordination
 
-The `claim-request` issue form is the public entry point. The trusted main-branch workflow reads every request, freezes the accepted target and account in state/claims.json, and commits decisions before posting acknowledgement. It does not trust mutable claim-body fields after acceptance. Source assignees override conflicts. One task per person applies to active central claims and current source assignments.
+The `claim-request` issue form is the public entry point. The trusted main-branch workflow reads every request, freezes the accepted target and numeric GitHub account ID (`userId`) in state/claims.json, and commits decisions before posting acknowledgement. It does not trust mutable claim-body fields after acceptance. Source assignees override conflicts. One task per person applies to active central claims and current source assignments, compared by numeric account ID rather than username. A verified matching ID may refresh the displayed login after an account rename; reusing an old login never transfers a reservation. Missing, malformed or mismatched account identities fail synchronization closed. Do not invent IDs or replace them by editing the ledger.
 
 Issue events trigger reconciliation; the schedule catches requests skipped when GitHub replaces a queued concurrency run. Expiry, closure, task completion/removal, and assignment conflicts release the reservation on the next successful reconciliation. Terminal requests never reactivate. Contributors must submit a new request for another reservation. The stored history is retained for audit.
 
@@ -22,6 +22,7 @@ After verifying task acceptance, submit a reviewed change to data/awards.json:
 {
   "issue": "https://github.com/AstralDeep/LETS/issues/123",
   "pr": "https://github.com/AstralDeep/LETS/pull/124",
+  "userId": 12345678,
   "login": "contributor-login",
   "points": 100,
   "review": 123456789,
@@ -29,9 +30,19 @@ After verifying task acceptance, submit a reviewed change to data/awards.json:
 }
 ```
 
-Numbers above illustrate a schema, not real tasks or awards. `review` is the GitHub numeric review ID, not an issue number. The approver must be in config.awardApprovers, independent from the PR author, and their APPROVED review must cover the final PR head and precede merge. The award date cannot precede merge. The source issue must retain its bounty and point labels and be closed with state_reason=completed. The PR must be merged in that repository and authored by login. The maintainer reviewing the ledger also checks that the PR actually resolves the linked task; this semantic judgment is not automated.
+Numbers above illustrate a schema, not real tasks or awards. `userId` is the contributor's required positive numeric GitHub account ID; verify it from the PR author returned by GitHub, never infer it from a username. `login` records the contributor's name when the award is entered. `review` is the GitHub numeric review ID, not an issue number. The approver must be in config.awardApprovers, independent from the PR author by account ID, and their APPROVED review must cover the final PR head and precede merge. The award date cannot precede merge. The source issue must retain its bounty and point labels and be closed with state_reason=completed. The PR must be merged in that repository and its author ID must equal `userId`.
 
-The initial configured award approver is the organization owner, armstrongsam25. Add other approvers through reviewed configuration changes. The public-source token cannot inspect private collaborator permissions; the explicit reviewed allowlist is the authority for credit approval.
+Synchronization keeps the ledger's recorded `login` unchanged and adds `displayLogin` only to the generated public award snapshot, taking the current name from that ID-verified PR author. Leaderboard totals are grouped by `userId` and use the verified display name. Renaming an account neither splits its points nor transfers them to a new account that adopts its old name. Missing or malformed author IDs fail validation; there is no username fallback.
+
+The selected approval review must deliberately attest that the PR satisfies the source bounty by including exactly one own line in this exact format, with the actual award issue URL:
+
+```text
+Bounty-issue: https://github.com/AstralDeep/LETS/issues/123
+```
+
+Keep the capitalization, single space and exact URL; do not indent the line, add trailing text, or include another `Bounty-issue:` line. Other review prose is allowed. A missing, wrong, duplicate or malformed attestation fails award validation. A PR description, ordinary issue mention, closing keyword or comment by another account does not substitute for this attestation in the selected independent APPROVED review. The reviewer remains responsible for judging task completion; the site verifies their explicit issue linkage and approval evidence, not the implementation's semantic correctness.
+
+The initial configured award approver is `{ "id": 16158892, "login": "armstrongsam25" }`, verified through GitHub's public user API during setup. Entries in `config.awardApprovers` require both fields; the numeric ID grants approval authority and the login is a readable recorded label. A matching ID remains authorized after a rename, while another account reusing the label does not. Add other approvers through reviewed configuration changes after verifying their GitHub IDs. The public-source token cannot inspect private collaborator permissions; the explicit reviewed allowlist is the authority for credit approval.
 
 One task and one PR can appear only once. Do not change points on credited issues. Corrections require a reviewed ledger change and explicit rationale in the PR/history. Source artifacts that are deleted or reviews that are dismissed cause subsequent validation to fail; investigate rather than silently drop credit.
 

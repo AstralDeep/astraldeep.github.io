@@ -10,12 +10,13 @@ export async function synchronize(api, config, previous, awards, now) {
     tasks.push(...issues.map(issue => taskFromIssue(repository, issue, config)).filter(Boolean));
   }
   validateAwards(awards, tasks, config);
+  const verifiedAwards = [];
   for (const award of awards) {
     const match = /^https:\/\/github.com\/(.+)\/pull\/(\d+)$/.exec(award.pr);
     const base = `/repos/${match[1]}`;
     const pr = await api.request(`${base}/pulls/${match[2]}`);
     const review = await api.request(`${base}/pulls/${match[2]}/reviews/${award.review}`);
-    verifyAwardEvidence(award, pr, review, config.awardApprovers);
+    verifiedAwards.push(verifyAwardEvidence(award, pr, review, config.awardApprovers));
   }
   const requests = await api.pages(`/repos/${config.coordinator}/issues?state=all&labels=claim-request`);
   for (const request of requests) {
@@ -24,5 +25,5 @@ export async function synchronize(api, config, previous, awards, now) {
     request.everClosed = events.some(event => event.event === 'closed');
   }
   const claims = reconcileClaims(previous, requests, tasks, config, now);
-  return { claims, board: summarize(tasks, claims, awards, now) };
+  return { claims, board: summarize(tasks, claims, verifiedAwards, now) };
 }
