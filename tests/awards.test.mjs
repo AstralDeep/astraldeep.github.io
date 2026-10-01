@@ -100,6 +100,14 @@ test('sync persists automatic awards together with finished claims for the publi
   assert.equal(result.awards.length, 1); assert.equal(result.board.leaderboard[0].points, 50); assert.equal(result.board.tasks[0].status, 'completed');
 });
 
+test('legacy close-reopen-close keeps its first terminal closure even before the next sync', async () => {
+  const source = { number: 20, title: 'Task', labels: ['bounty', 'points:50'], assignees: [], state: 'closed', state_reason: 'completed' };
+  const request = { number: 2, user: author, state: 'closed', closed_at: '2026-10-01T13:05:00Z' };
+  const live = { ...api, request: async path => path.includes('/pulls/') ? pr : { has_issues: true }, pages: async path => path === `/repos/${repository}/issues?state=all&labels=bounty` ? [source] : path === `/repos/${config.coordinator}/issues?state=all&labels=claim-request` ? [request] : path === `/repos/${config.coordinator}/issues/2/events` ? [{ event: 'closed', created_at: '2026-10-01T12:59:00Z' }, { event: 'reopened' }, { event: 'closed', created_at: request.closed_at }] : [] };
+  const result = await synchronize(live, config, { 2: { ...claims[2], status: 'active' } }, [], now);
+  assert.equal(result.claims[2].endedAt, '2026-10-01T12:59:00Z'); assert.equal(result.awards.length, 0);
+});
+
 test('closure lookup sends a bounded read-only query and fails on missing provider evidence', async () => {
   const good = { data: { repository: { issue: { timelineItems: { nodes: [closure] } } } } };
   const client = new GitHub('test-only', async (url, options) => {

@@ -13,7 +13,7 @@ export async function synchronize(api, config, previous, awards, now, enabledAt 
   }
   const requests = await api.pages(`/repos/${config.coordinator}/issues?state=all&labels=claim-request`);
   for (const request of requests) {
-    if (request.pull_request || request.state !== 'open' || (previous[request.number] && previous[request.number].status !== 'active')) continue;
+    if (request.pull_request || (request.state !== 'open' && !previous[request.number]) || (previous[request.number] && previous[request.number].status !== 'active')) continue;
     const events = await api.pages(`/repos/${config.coordinator}/issues/${request.number}/events`);
     request.everClosed = events.some(event => event.event === 'closed');
     request.firstClosedAt = events.find(event => event.event === 'closed')?.created_at;
