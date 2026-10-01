@@ -26,4 +26,20 @@ export class GitHub {
     }
     throw new Error('Pagination limit reached; refusing incomplete board data');
   }
+
+  async closedBy(repository, number) {
+    if (!/^[\w.-]+\/[\w.-]+$/.test(repository) || !Number.isSafeInteger(number) || number < 1) throw new Error('Invalid closure target');
+    const [owner, name] = repository.split('/');
+    const query = 'query($owner:String!,$name:String!,$number:Int!){repository(owner:$owner,name:$name){issue(number:$number){timelineItems(last:1,itemTypes:[CLOSED_EVENT]){nodes{... on ClosedEvent{id createdAt closer{__typename ... on PullRequest{url}}}}}}}}';
+    const response = await this.transport('https://api.github.com/graphql', {
+      method: 'POST', redirect: 'error', signal: AbortSignal.timeout(30000),
+      headers: { 'Content-Type': 'application/json', 'User-Agent': 'AstralDeep-community', ...(this.token ? { Authorization: `Bearer ${this.token}` } : {}) },
+      body: JSON.stringify({ query, variables: { owner, name, number } }),
+    });
+    if (!response.ok) throw new Error(`GitHub closure lookup returned ${response.status}`);
+    const result = await response.json();
+    const nodes = result.data?.repository?.issue?.timelineItems?.nodes;
+    if (result.errors || !Array.isArray(nodes)) throw new Error('Incomplete GitHub closure evidence');
+    return nodes[0] || null;
+  }
 }
