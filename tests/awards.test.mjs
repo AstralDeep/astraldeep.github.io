@@ -15,7 +15,7 @@ const pr = { html_url: `https://github.com/${repository}/pull/25`, user: author,
 const closure = { id: 'CE_example', createdAt: '2026-10-10T14:00:01Z', closer: { __typename: 'PullRequest', url: pr.html_url } };
 const now = '2026-10-10T15:00:00Z';
 const claims = { 2: { key: task.key, userId: author.id, login: author.login, status: 'expired', createdAt: '2026-10-01T12:00:00Z', expiresAt: '2026-10-08T12:00:00Z', endedAt: '2026-10-08T12:01:00Z' } };
-const assignment = { id: 123, event: 'assigned', created_at: '2026-10-01T12:30:00Z', actor: author, assignee: author };
+const assignment = { id: 123, event: 'assigned', created_at: '2026-10-01T12:30:00Z', actor: { ...author, id: 99 }, assigner: author, assignee: author };
 const credit = (p = pr, c = claims, events = [], close = closure, t = task) => mergedAward(t, p, close, c, events, config, now);
 const api = { request: async () => pr, closedBy: async () => closure, pages: async () => [] };
 
@@ -48,11 +48,13 @@ test('claim admission rejects invalid or late reservations while preserving elig
 
 test('manual assignment history qualifies only the sole human-assigned author at submission', () => {
   const award = credit(pr, {}, [{ event: 'labeled' }, assignment]);
-  assert.deepEqual(award.claim, { type: 'assignment', eventId: 123, actorId: author.id, userId: author.id, createdAt: assignment.created_at });
-  for (const events of [[], [{ ...assignment, actor: { ...author, type: 'Bot' } }], [{ ...assignment, id: -1 }], [{ ...assignment, created_at: pr.merged_at }], [assignment, { ...assignment, id: 124, event: 'unassigned' }], [assignment, { ...assignment, id: 124, assignee: { id: 2, login: 'other' } }]]) assert.equal(credit(pr, {}, events), null);
+  assert.deepEqual(award.claim, { type: 'assignment', eventId: 123, assignerId: author.id, userId: author.id, createdAt: assignment.created_at });
+  for (const events of [[], [{ ...assignment, assigner: { ...author, type: 'Bot' } }], [{ ...assignment, id: -1 }], [{ ...assignment, created_at: pr.merged_at }], [assignment, { ...assignment, id: 124, event: 'unassigned' }], [assignment, { ...assignment, id: 124, assignee: { id: 2, login: 'other' } }]]) assert.equal(credit(pr, {}, events), null);
   assert.ok(credit(pr, {}, [{ ...assignment, event: 'unassigned', id: 122 }, assignment]));
   assert.ok(credit(pr, {}, [assignment, { ...assignment, id: 124, event: 'unassigned', created_at: pr.merged_at }]));
   assert.throws(() => credit(pr, {}, [{ ...assignment, created_at: 'bad' }]), /event time/);
+  assert.equal(credit(pr, {}, [{ ...assignment, actor: author, assigner: { id: 41898282, login: 'github-actions[bot]', type: 'Bot' } }]), null);
+  assert.equal(credit(pr, {}, [{ ...assignment, actor: author, assigner: undefined }]), null);
 });
 
 test('manual overrides and cancellation before submission take precedence over delayed reconciliation', () => {
@@ -60,7 +62,7 @@ test('manual overrides and cancellation before submission take precedence over d
   const intervened = '2026-10-01T12:59:00Z';
   assert.equal(credit(pr, delayed, [{ ...assignment, created_at: intervened, assignee: { id: 99, login: 'other' } }]), null);
   assert.equal(credit(pr, delayed, [{ ...assignment, created_at: intervened, event: 'unassigned' }]), null);
-  assert.equal(credit(pr, claims, [{ ...assignment, created_at: intervened, event: 'unassigned', actor: { ...author, type: 'Bot' } }]).points, 50);
+  assert.equal(credit(pr, claims, [{ ...assignment, created_at: intervened, event: 'unassigned', assigner: { ...author, type: 'Bot' } }]).points, 50);
   assert.equal(credit(pr, { ...claims, cancel: { key: task.key, userId: author.id, cancellationValid: true, source: { command: 'unclaim', commandAt: intervened } } }), null);
   assert.ok(credit(pr, { ...claims, cancel: { key: task.key, userId: author.id, cancellationValid: false, source: { command: 'unclaim', commandAt: intervened } } }));
   for (const state of ['closed', 'open']) {

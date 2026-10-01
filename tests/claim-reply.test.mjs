@@ -46,7 +46,7 @@ function fixture() {
     state.mutations.push({ query, variables });
     if (query.includes('removeAssignees')) state.issue.assignees = state.issue.assignees.filter(user => user.node_id !== variables.user);
     else state.issue.assignees.push({ id: 7, node_id: variables.user, login: state.node.login });
-    state.events.push({ id: state.events.length + 300, event: query.includes('removeAssignees') ? 'unassigned' : 'assigned', assignee: { id: 7 }, actor: bot });
+    state.events.push({ id: state.events.length + 300, event: query.includes('removeAssignees') ? 'unassigned' : 'assigned', assignee: { id: 7 }, actor: comment.user, assigner: bot });
     return {};
   } };
   return { state, github, context, run: options => replyToClaim({ github, context, clock: () => state.clock, ...options }) };
@@ -58,6 +58,18 @@ function reserve(f, changes = {}) {
 
 function reply(f) { return f.state.comments.find(item => p.trustedBot(item.user)); }
 function status(result) { return result.results?.[0]?.status ?? result.status; }
+
+test('ownership uses the provider assigner rather than an actor naming the assignee', async () => {
+  const f = fixture(); reserve(f); await f.run();
+  assert.equal(f.state.events[0].actor.id, 7);
+  assert.match(reply(f).body, /astral-assignment:/);
+  f.state.clock = '2026-10-10T00:00:00Z';
+  await f.run(); assert.equal(f.state.issue.assignees.length, 0);
+  const g = fixture(); reserve(g); await g.run();
+  g.state.events[0].actor = bot; g.state.events[0].assigner = g.state.comment.user;
+  g.state.clock = '2026-10-10T00:00:00Z';
+  await g.run(); assert.equal(g.state.issue.assignees.length, 1);
+});
 
 test('one claim queues without a form and retries edit the same trusted receipt', async () => {
   const f = fixture();
@@ -140,7 +152,7 @@ test('pre-existing manual assignments and later human reassignments survive rese
     const f = fixture(); reserve(f);
     if (preexisting) f.state.issue.assignees = [{ id: 7, node_id: 'U7', login: 'contributor' }];
     await f.run();
-    f.state.events.push({ id: 900, event: 'assigned', assignee: { id: 7 }, actor: { id: 99, login: 'maintainer', type: 'User' } });
+    f.state.events.push({ id: 900, event: 'assigned', assignee: { id: 7 }, assigner: { id: 99, login: 'maintainer', type: 'User' } });
     f.state.claims[id].status = 'released'; await f.run();
     assert.equal(f.state.issue.assignees[0].id, 7);
     assert.equal(f.state.mutations.filter(item => item.query.includes('removeAssignees')).length, 0);
@@ -150,7 +162,7 @@ test('pre-existing manual assignments and later human reassignments survive rese
 test('manual reassignment between recovery reads and revoked reservations before assignment stop writes', async () => {
   const f = fixture(); reserve(f); await f.run(); f.state.claims[id].status = 'released';
   const events = f.github.rest.issues.listEvents; let reads = 0;
-  f.github.rest.issues.listEvents = async args => { if (++reads === 2) f.state.events.push({ id: 999, event: 'assigned', assignee: { id: 7 }, actor: { id: 8, login: 'owner', type: 'User' } }); return events(args); };
+  f.github.rest.issues.listEvents = async args => { if (++reads === 2) f.state.events.push({ id: 999, event: 'assigned', assignee: { id: 7 }, assigner: { id: 8, login: 'owner', type: 'User' } }); return events(args); };
   await f.run(); assert.equal(f.state.mutations.length, 1);
   const g = fixture(); reserve(g); const read = g.github.rest.repos.getContent; let ledgerReads = 0;
   g.github.rest.repos.getContent = async args => { if (args.path === 'state/claims.json' && ++ledgerReads === 2) g.state.claims[id].status = 'released'; return read(args); };
@@ -160,7 +172,7 @@ test('manual reassignment between recovery reads and revoked reservations before
 test('manual unassignment does not cause the bot to fight a maintainer', async () => {
   const f = fixture(); reserve(f); await f.run();
   f.state.issue.assignees = [];
-  f.state.events.push({ id: 999, event: 'unassigned', assignee: { id: 7 }, actor: { id: 8, type: 'User', login: 'maintainer' } });
+  f.state.events.push({ id: 999, event: 'unassigned', assignee: { id: 7 }, assigner: { id: 8, type: 'User', login: 'maintainer' } });
   await f.run();
   assert.equal(f.state.mutations.length, 1); assert.equal(f.state.issue.assignees.length, 0);
   assert.match(reply(f).body, /maintainer removed/);
@@ -182,7 +194,7 @@ test('duplicate receipts share assignment ownership and never undo a manual remo
     f.state.comment = duplicate; f.context.payload.comment.id = 101;
     await f.run();
     f.state.issue.assignees = [];
-    f.state.events.push({ id: 999, event: 'unassigned', assignee: { id: 7 }, actor: { id: 8, type: 'User', login: 'maintainer' } });
+    f.state.events.push({ id: 999, event: 'unassigned', assignee: { id: 7 }, assigner: { id: 8, type: 'User', login: 'maintainer' } });
     if (schedule) f.context.eventName = 'schedule';
     await f.run();
     assert.equal(f.state.mutations.length, 1);

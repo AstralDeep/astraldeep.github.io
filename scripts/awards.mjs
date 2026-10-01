@@ -19,14 +19,14 @@ function claimEvidence(task, pr, claims, events) {
   if ([...assignments.keys()].some(id => id !== pr.user.id)) return null;
   for (const [id, claim] of Object.entries(claims)) {
     if (claim.key !== task.key || claim.userId !== pr.user.id || !['active', 'finished', 'expired', 'released', 'superseded'].includes(claim.status)) continue;
-    if (latestAuthorEvent?.event === 'unassigned' && latestAuthorEvent.actor?.type === 'User' && Date.parse(latestAuthorEvent.created_at) >= Date.parse(claim.createdAt)) continue;
+    if (latestAuthorEvent?.event === 'unassigned' && latestAuthorEvent.assigner?.type === 'User' && Date.parse(latestAuthorEvent.created_at) >= Date.parse(claim.createdAt)) continue;
     const cancelled = Object.values(claims).some(item => item.key === task.key && item.userId === pr.user.id && item.source?.command === 'unclaim' && item.cancellationValid === true && Date.parse(item.source.commandAt) >= Date.parse(claim.createdAt) && Date.parse(item.source.commandAt) <= submitted);
     if (cancelled) continue;
     const ended = claims[claim.releasedBy]?.source?.commandAt || claim.endedAt || claim.expiresAt;
     if (Date.parse(claim.createdAt) <= submitted && submitted < Math.min(Date.parse(claim.expiresAt), Date.parse(ended))) return { type: 'reservation', id, createdAt: claim.createdAt, expiresAt: claim.expiresAt };
   }
   const event = assignments.get(pr.user.id);
-  if (assignments.size === 1 && event?.actor?.type === 'User' && Number.isSafeInteger(event.id) && event.id > 0) return { type: 'assignment', eventId: event.id, actorId: accountId(event.actor), userId: pr.user.id, createdAt: event.created_at };
+  if (assignments.size === 1 && event?.assigner?.type === 'User' && Number.isSafeInteger(event.id) && event.id > 0) return { type: 'assignment', eventId: event.id, assignerId: accountId(event.assigner), userId: pr.user.id, createdAt: event.created_at };
   return null;
 }
 

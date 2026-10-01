@@ -27,8 +27,8 @@ export async function sourceRequests(api, tasks, previous, enabledAt) {
       if (reservation?.key === task.key && reservation.userId === record.userId) {
         events ??= await api.pages(`/repos/${task.repository}/issues/${task.number}/events`);
         const latest = events.filter(event => ['assigned', 'unassigned'].includes(event.event) && event.assignee?.id === record.userId).sort((a, b) => b.id - a.id)[0];
-        if (latest?.event === 'assigned' && trustedBot(latest.actor) && task.assigneeIds.includes(record.userId) && (owned ? latest.id === owned.event : latest.id > intent.event)) task.managedAssignments.push({ id: assignment.id, userId: record.userId });
-        if (latest?.event === 'unassigned' && !trustedBot(latest.actor) && latest.id > assignment.event) task.manuallyReleasedClaims.push(assignment.id);
+        if (latest?.event === 'assigned' && trustedBot(latest.assigner) && task.assigneeIds.includes(record.userId) && (owned ? latest.id === owned.event : latest.id > intent.event)) task.managedAssignments.push({ id: assignment.id, userId: record.userId });
+        if (latest?.event === 'unassigned' && !trustedBot(latest.assigner) && latest.id > assignment.event) task.manuallyReleasedClaims.push(assignment.id);
       }
       const original = byId.get(record.commentId);
       if (!original || original.user?.type !== 'User') continue;
