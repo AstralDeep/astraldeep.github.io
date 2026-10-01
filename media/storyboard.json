@@ -159,5 +159,291 @@
         "AstralDeep/astraldeep.github.io/data/config.json"
       ]
     }
-  ]
+  ],
+  "visual_revision": {
+    "duration": 141.63491666666667,
+    "narration_preserved": true,
+    "captions_preserved": true,
+    "states": [
+      {
+        "chapter": 1,
+        "start": 0,
+        "title": "Agents doing useful work",
+        "description": "A person supplies a task, an agent works, and a summary returns.",
+        "frame": "01.png",
+        "end": 5.334666667,
+        "duration": 5.334666667
+      },
+      {
+        "chapter": 1,
+        "start": 5.334666667,
+        "title": "Authority people can follow",
+        "description": "The agent delegates selected-file reading to a helper.",
+        "frame": "02.png",
+        "end": 12.148666667,
+        "duration": 6.814000000000001
+      },
+      {
+        "chapter": 2,
+        "start": 12.148666667,
+        "title": "Discovery finds capabilities",
+        "description": "Discovery exposes tools but grants no authority.",
+        "frame": "03.png",
+        "end": 17.986,
+        "duration": 5.837333333
+      },
+      {
+        "chapter": 2,
+        "start": 17.986,
+        "title": "A separate permission boundary",
+        "description": "Host authorization permits the selected-file read.",
+        "frame": "04.png",
+        "end": 21.199333333,
+        "duration": 3.213333332999998
+      },
+      {
+        "chapter": 2,
+        "start": 21.199333333,
+        "title": "A visible tool can still be denied",
+        "description": "The email tool is discoverable but the helper has no grant to invoke it.",
+        "frame": "05.png",
+        "end": 25.282666667,
+        "duration": 4.083333334000002
+      },
+      {
+        "chapter": 3,
+        "start": 25.282666667,
+        "title": "LETS bounds delegated authority",
+        "description": "A child grant begins within the parent authority.",
+        "frame": "06.png",
+        "end": 29.221333333,
+        "duration": 3.9386666659999996
+      },
+      {
+        "chapter": 3,
+        "start": 29.221333333,
+        "title": "The child receives a narrower grant",
+        "description": "Selected-file access is bounded by application authorization and bound arguments.",
+        "frame": "07.png",
+        "end": 32.6,
+        "duration": 3.378666667000001
+      },
+      {
+        "chapter": 3,
+        "start": 32.6,
+        "title": "Budget and expiry also shrink",
+        "description": "Illustrative resource units and expiry: the child receives 3 of the parent 10 units and ends sooner.",
+        "frame": "08.png",
+        "end": 35.698666667,
+        "duration": 3.0986666669999963
+      },
+      {
+        "chapter": 3,
+        "start": 35.698666667,
+        "title": "A receipt comes before the action",
+        "description": "The executor verifies and durably claims the receipt. An invalid or replayed receipt denies the path.",
+        "frame": "09.png",
+        "end": 38.75,
+        "duration": 3.0513333330000023
+      },
+      {
+        "chapter": 3,
+        "start": 38.75,
+        "title": "The protected action follows the claim",
+        "description": "A successful receipt claim permits the protected action to proceed through its remaining authorization checks.",
+        "frame": "10.png",
+        "end": 41.019333333,
+        "duration": 2.2693333329999987
+      },
+      {
+        "chapter": 4,
+        "start": 41.019333333,
+        "title": "Checks stay on the dispatch path",
+        "description": "Identity, owner isolation and tool policy are checked on normal dispatch.",
+        "frame": "11.png",
+        "end": 47.601208333,
+        "duration": 6.581875000000004
+      },
+      {
+        "chapter": 4,
+        "start": 47.601208333,
+        "title": "Sensitive actions need confirmation",
+        "description": "Required confirmation remains a gate rather than a model decision.",
+        "frame": "12.png",
+        "end": 51.433208333,
+        "duration": 3.8320000000000007
+      },
+      {
+        "chapter": 4,
+        "start": 51.433208333,
+        "title": "Audit records the authority path",
+        "description": "Provenance preserves who authorized the chain and how the action received authority.",
+        "frame": "13.png",
+        "end": 56.860541667,
+        "duration": 5.4273333339999965
+      },
+      {
+        "chapter": 5,
+        "start": 56.860541667,
+        "title": "Useful agents need useful interfaces",
+        "description": "A summary form connects the same example task to generative UI.",
+        "frame": "14.png",
+        "end": 60.180541667,
+        "duration": 3.3200000000000003
+      },
+      {
+        "chapter": 5,
+        "start": 60.180541667,
+        "title": "The model proposes primitive structure",
+        "description": "The proposal uses actual container, input and button component types.",
+        "frame": "15.png",
+        "end": 65.569875,
+        "duration": 5.389333332999996
+      },
+      {
+        "chapter": 5,
+        "start": 65.569875,
+        "title": "Code validates the proposal",
+        "description": "Component types, references, layout bounds and web escaping stay under deterministic code.",
+        "frame": "16.png",
+        "end": 70.788878236,
+        "duration": 5.219003236000006
+      },
+      {
+        "chapter": 5,
+        "start": 70.788878236,
+        "title": "The renderer controls the output",
+        "description": "Only the checked structure becomes a rendered form. This is a schematic, not a product screenshot.",
+        "frame": "17.png",
+        "end": 71.940541667,
+        "duration": 1.151663431000003
+      },
+      {
+        "chapter": 5,
+        "start": 71.940541667,
+        "title": "The model proposes. Code decides.",
+        "description": "The final form uses the same allowed action rather than letting a model supply arbitrary web code.",
+        "frame": "18.png",
+        "end": 74.871875,
+        "duration": 2.9313333329999978
+      },
+      {
+        "chapter": 6,
+        "start": 74.871875,
+        "title": "A shared UI vocabulary",
+        "description": "Primitives owns the definitions that Projection consumes.",
+        "frame": "19.png",
+        "end": 77.786541667,
+        "duration": 2.9146666669999917
+      },
+      {
+        "chapter": 6,
+        "start": 77.786541667,
+        "title": "Projection adapts the same contract",
+        "description": "Projection renders the contract on web, desktop and mobile.",
+        "frame": "20.png",
+        "end": 82.002541667,
+        "duration": 4.216000000000008
+      },
+      {
+        "chapter": 6,
+        "start": 82.002541667,
+        "title": "Each component owns its part",
+        "description": "Deep orchestrates work and Plane owns durable state.",
+        "frame": "21.png",
+        "end": 86.389208333,
+        "duration": 4.386666665999996
+      },
+      {
+        "chapter": 6,
+        "start": 86.389208333,
+        "title": "Same meaning, layouts that fit",
+        "description": "The same input and action appear side by side on desktop and stacked on mobile. Schematics show semantic adaptation, not current screenshots.",
+        "frame": "22.png",
+        "end": 92.733875,
+        "duration": 6.3446666669999985
+      },
+      {
+        "chapter": 7,
+        "start": 92.733875,
+        "title": "Open protocol connections",
+        "description": "Interoperability goal: apps reach tools through MCP and other agents through Agent2Agent.",
+        "frame": "23.png",
+        "end": 100.064541667,
+        "duration": 7.330666667000003
+      },
+      {
+        "chapter": 7,
+        "start": 100.064541667,
+        "title": "Reusable outside the full Astral stack",
+        "description": "Versioned contracts and compatibility tests make independent component use possible. This is an integration goal, not a conformance claim.",
+        "frame": "24.png",
+        "end": 107.027875,
+        "duration": 6.963333332999994
+      },
+      {
+        "chapter": 8,
+        "start": 107.027875,
+        "title": "Contributions prove the boundaries",
+        "description": "Contribution work should test both successful requests and denied authority.",
+        "frame": "25.png",
+        "end": 113.776104015,
+        "duration": 6.748229015000007
+      },
+      {
+        "chapter": 8,
+        "start": 113.776104015,
+        "title": "Mobile voice needs recovery",
+        "description": "Mobile voice contribution goal: interruption and reconnection should preserve the conversation.",
+        "frame": "26.png",
+        "end": 117.662916667,
+        "duration": 3.8868126520000033
+      },
+      {
+        "chapter": 8,
+        "start": 117.662916667,
+        "title": "A component others can reuse",
+        "description": "Client parity and independent examples make the shared vocabulary useful to other developers.",
+        "frame": "27.png",
+        "end": 125.180916667,
+        "duration": 7.518000000000001
+      },
+      {
+        "chapter": 9,
+        "start": 125.180916667,
+        "title": "49 tasks across five repositories",
+        "description": "The board currently contains the 49 owner-approved public source tasks.",
+        "frame": "28.png",
+        "end": 129.460916667,
+        "duration": 4.279999999999987
+      },
+      {
+        "chapter": 9,
+        "start": 129.460916667,
+        "title": "A reservation comes before the work",
+        "description": "The central claim workflow reserves the task before implementation starts.",
+        "frame": "29.png",
+        "end": 134.103583333,
+        "duration": 4.642666665999997
+      },
+      {
+        "chapter": 9,
+        "start": 134.103583333,
+        "title": "Reviewed work earns recognition",
+        "description": "Awards require accepted completed work and independent review under the board rules. No invented contributor scores appear.",
+        "frame": "30.png",
+        "end": 137.999583333,
+        "duration": 3.896000000000015
+      },
+      {
+        "chapter": 9,
+        "start": 137.999583333,
+        "title": "Help move the project forward",
+        "description": "The site is the entry point for public point bounties.",
+        "frame": "31.png",
+        "end": 141.63491666666667,
+        "duration": 3.635333333666665
+      }
+    ]
+  }
 }
