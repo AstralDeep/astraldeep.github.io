@@ -47,6 +47,7 @@
     "cancellationValid": true,
     "reason": "",
     "createdAt": "2026-10-01T15:17:50.274Z",
-    "endedAt": "2026-10-01T15:17:50.274Z"
+    "endedAt": "2026-10-01T15:17:50.274Z",
+    "userNodeId": "MDQ6VXNlcjE2MTU4ODky"
   }
 }
