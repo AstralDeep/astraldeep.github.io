@@ -1,0 +1,25 @@
+name: Bounty claim guidance
+description: Reply to source-issue claim commands with the central claim form or existing assignment status.
+inputs:
+  comment-id:
+    description: Existing comment ID for a maintainer recovery run.
+    required: false
+    default: ''
+  dry-run:
+    description: Report the intended reply without posting it.
+    required: false
+    default: 'false'
+runs:
+  using: composite
+  steps:
+    - uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3
+      env:
+        ASTRAL_CLAIM_ACTION_PATH: ${{ github.action_path }}
+        ASTRAL_CLAIM_COMMENT_ID: ${{ inputs.comment-id }}
+        ASTRAL_CLAIM_DRY_RUN: ${{ inputs.dry-run }}
+      with:
+        retries: 0
+        script: |
+          const { replyToClaim } = require(process.env.ASTRAL_CLAIM_ACTION_PATH + '/index.cjs');
+          const result = await replyToClaim({ github, context, commentId: process.env.ASTRAL_CLAIM_COMMENT_ID, dryRun: process.env.ASTRAL_CLAIM_DRY_RUN });
+          core.info(JSON.stringify(result));
