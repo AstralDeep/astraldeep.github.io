@@ -48,6 +48,8 @@ The workflow appends `policy: maintainer-merge` records to `data/awards.json` wi
 
 Every sync revalidates recorded awards. Display names are refreshed from the ID-verified PR author; the ledger’s original login remains unchanged. Do not change credited issue point labels or silently rewrite history. Corrections require a reviewed ledger change and an explicit reason. Missing or changed evidence fails deployment, preserving the last published site.
 
+The [2026-10-01 missed-claim correction](CREDIT-RECOVERY-2026-10-01.md) records the owner-approved historical exception and its per-task qualification evidence.
+
 ## Deploy and recover
 
 GitHub Pages must use Actions. `Community board` runs only from exact refs/heads/main. Pull-request checks have read-only permissions and never publish. The build allowlists site/ plus its generated board JSON; no review drafts, internal tooling, or credentials go into the artifact.
