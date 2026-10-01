@@ -59,7 +59,7 @@ export function reconcileClaims(previous, requests, tasks, config, now) {
     else if (!task || task.state !== 'open') claim.status = 'finished';
     else if (task.manuallyReleasedClaims?.includes(id)) { claim.status = 'superseded'; claim.reason = 'A maintainer removed the source assignment.'; }
     else if (task.assigneeIds.some(userId => userId !== claim.userId)) claim.status = 'superseded';
-    if (claim.status !== 'active') claim.endedAt = now;
+    if (claim.status !== 'active') claim.endedAt = claim.status === 'released' && Number.isFinite(Date.parse(request?.firstClosedAt || request?.closed_at)) ? request.firstClosedAt || request.closed_at : now;
   }
   const active = Object.values(claims).filter(claim => claim.status === 'active');
   for (const request of [...requests].sort((a, b) => (Date.parse(a.created_at) || 0) - (Date.parse(b.created_at) || 0) || a.number - b.number || String(a.id).localeCompare(String(b.id)))) {
@@ -77,7 +77,7 @@ export function reconcileClaims(previous, requests, tasks, config, now) {
     else if (request.changedCommand) reason = 'This command was edited. Post a new /claim or /unclaim comment.';
     else if (!task || task.state !== 'open') reason = 'Choose an open, approved bounty from the board.';
     if (request.source?.command === 'unclaim') {
-      const cancellationValid = !reason;
+      const cancellationValid = Boolean(task && request.user.type === 'User' && !request.changedCommand && !request.everClosed);
       if (!reason && current && commandOrder(current, { source: request.source }) <= 0) {
         current.status = 'released'; current.endedAt = now; current.releasedBy = id;
       } else if (!reason) reason = 'You have no active reservation on this issue. Manual assignments require a maintainer.';
@@ -131,7 +131,7 @@ export function validateAwards(awards, tasks, config) {
     if (prs.has(award.pr)) throw new Error('A PR can only earn one bounty award');
     if (!config.points.includes(award.points) || award.points !== task.points) throw new Error('Award points must match the approved issue');
     accountId({ id: award.userId, login: award.login });
-    if (!/^[a-z\d](?:[a-z\d-]{0,38})$/i.test(award.login) || !Number.isSafeInteger(award.review) || award.review < 1) throw new Error('Invalid contributor or approval review');
+    if (!/^[a-z\d](?:[a-z\d-]{0,38})$/i.test(award.login) || (award.policy !== 'maintainer-merge' && (award.policy || !Number.isSafeInteger(award.review) || award.review < 1))) throw new Error('Invalid contributor or award policy');
     if (!new RegExp(`^https://github\\.com/${target.repository}/pull/[1-9]\\d*$`).test(award.pr)) throw new Error('Award PR must be in the task repository');
     if (!Number.isFinite(Date.parse(award.awardedAt))) throw new Error('Invalid award date');
     seen.add(task.key);

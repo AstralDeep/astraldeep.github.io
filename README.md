@@ -8,7 +8,7 @@ The ecosystem page includes a 2:22 slide introduction about bounded agent delega
 
 Source issues own task scope. Comment `/claim` on a bounty issue to request a seven-day reservation; no form is needed. The central ledger serializes reservations across all five repositories, and each source bot confirms the decision and assigns the issue using its own built-in token. A new `/unclaim` comment releases the reservation. Existing replies are updated instead of duplicated. Scheduled coordination can take several minutes; wait for **Reserved** on the source issue before starting.
 
-Public reads need no cross-repository write credential. The community workflow owns the reservation and reviewed award ledgers and publishes Pages. Source workflows only modify their own issues, preserve manual assignments and remove only assignments they created for an ended reservation. The board refreshes automatically while visible. Product qualification, independent award review and release controls remain separate.
+Public reads need no cross-repository write credential. The community workflow owns the reservation and automatic award ledgers and publishes Pages. Source workflows only modify their own issues, preserve manual assignments and remove only assignments they created for an ended reservation. The board refreshes automatically while visible. A configured maintainer’s merge automatically approves points for the matching claimed bounty, including their own work. Contributors use `Closes #N` in the PR description; no separate points review or ledger entry is needed. Product qualification and release controls remain in force.
 
 ## Development
 

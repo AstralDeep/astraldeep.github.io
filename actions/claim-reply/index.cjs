@@ -85,7 +85,7 @@ async function processCommand(github, repo, number, original, reply, dryRun, clo
   metadata.unshift(`<!-- astral-command-time:${commandAt} -->`);
   const save = async message => {
     const body = [p.marker(original.id, original.user.id, command), `<!-- astral-claim-help:${original.id} -->`, ...metadata, message,
-      '', 'One active task per contributor. Reservations last seven days. Post a new `/unclaim` comment here to release yours. Points recognize reviewed, merged work and have no cash value.'].join('\n');
+      '', 'One active task per contributor. Reservations last seven days. Post a new `/unclaim` comment here to release yours. Use `Closes #N` in your PR description. A configured maintainer’s merge awards points automatically, including their own work. Points have no cash value.'].join('\n');
     if (dryRun || reply?.body === body) return;
     const result = reply
       ? await github.rest.issues.updateComment({ ...repo, comment_id: reply.id, body })

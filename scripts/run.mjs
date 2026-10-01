@@ -19,5 +19,6 @@ await writeFile('.cache/board.json', `${JSON.stringify(result.board, null, 2)}\n
 if (persist) {
   await writeFile('state/claims.json', `${JSON.stringify(result.claims, null, 2)}\n`);
   await writeFile('state/claim-protocol.json', `${JSON.stringify(activation, null, 2)}\n`);
+  await writeFile('data/awards.json', `${JSON.stringify(result.awards, null, 2)}\n`);
 }
-console.log(`Validated ${result.board.tasks.length} tasks, ${Object.keys(result.claims).length} claim records, ${awards.length} awards.`);
+console.log(`Validated ${result.board.tasks.length} tasks, ${Object.keys(result.claims).length} claim records, ${result.awards.length} awards.`);

@@ -5,7 +5,7 @@
   "type": "module",
   "engines": { "node": ">=22" },
   "scripts": {
-    "test": "node --test --experimental-test-coverage --test-coverage-lines=90 --test-coverage-include=scripts/model.mjs --test-coverage-include=scripts/github.mjs --test-coverage-include=scripts/sync.mjs --test-coverage-include=scripts/source-claims.mjs --test-coverage-include=actions/claim-reply/*.cjs tests/*.test.mjs",
+    "test": "node --test --experimental-test-coverage --test-coverage-lines=90 --test-coverage-include=scripts/awards.mjs --test-coverage-include=scripts/model.mjs --test-coverage-include=scripts/github.mjs --test-coverage-include=scripts/sync.mjs --test-coverage-include=scripts/source-claims.mjs --test-coverage-include=actions/claim-reply/*.cjs tests/*.test.mjs",
     "build": "node scripts/build.mjs",
     "build:preview": "node scripts/build.mjs --preview",
     "sync": "node scripts/run.mjs",

@@ -36,37 +36,17 @@ Publish the coordinator first, let its successful main run establish the activat
 
 A failed state push aborts notification and Pages publication. Never force-push the ledger: rerun from fresh main so decisions are recomputed against the committed history. Source recovery must never acknowledge a reservation read only from an uncommitted candidate. The activation file and reservation history must move together on recovery; do not reset activation to process historical comments.
 
-## Award record
+## Automatic awards
 
-After verifying task acceptance, submit a reviewed change to data/awards.json:
+A configured maintainer’s merge is the points approval, including their own PR. Contributors claim the source issue, open the PR while the reservation is valid, and put `Closes #N` in its description. GitHub must record that PR as closing the bounty as completed. No independent award review, attestation, form or manually entered award is needed. Product CI and review protections remain authoritative.
 
-```json
-{
-  "issue": "https://github.com/AstralDeep/LETS/issues/123",
-  "pr": "https://github.com/AstralDeep/LETS/pull/124",
-  "userId": 12345678,
-  "login": "contributor-login",
-  "points": 100,
-  "review": 123456789,
-  "awardedAt": "2026-10-01T12:00:00Z"
-}
-```
+The coordinator checks GitHub’s latest `ClosedEvent.closer`, the same-repository merged PR, the author’s numeric ID, and `merged_by` against `config.awardApprovers`. This existing configuration name now identifies maintainers whose merges approve points. Sam is configured by ID 16158892; login is a readable label and cannot transfer authority after a rename. Add other maintainers through reviewed configuration changes with verified IDs.
 
-Numbers above illustrate a schema, not real tasks or awards. `userId` is the contributor's required positive numeric GitHub account ID; verify it from the PR author returned by GitHub, never infer it from a username. `login` records the contributor's name when the award is entered. `review` is the GitHub numeric review ID, not an issue number. The approver must be in config.awardApprovers, independent from the PR author by account ID, and their APPROVED review must cover the final PR head and precede merge. The award date cannot precede merge. The source issue must retain its bounty and point labels and be closed with state_reason=completed. The PR must be merged in that repository and its author ID must equal `userId`.
+Claim eligibility is evaluated at PR creation. The author must have an accepted reservation then, or be the sole manually assigned contributor according to GitHub assignment events. Bot assignments alone cannot substitute for a valid reservation. Reservation expiry during review does not invalidate a PR submitted on time. Released, rejected, duplicate, later or expired-at-submission claims do not qualify. A manually closed issue, ordinary mention or arbitrary PR description cannot substitute for GitHub’s actual closing-PR evidence.
 
-Synchronization keeps the ledger's recorded `login` unchanged and adds `displayLogin` only to the generated public award snapshot, taking the current name from that ID-verified PR author. Leaderboard totals are grouped by `userId` and use the verified display name. Renaming an account neither splits its points nor transfers them to a new account that adopts its old name. Missing or malformed author IDs fail validation; there is no username fallback.
+The workflow appends `policy: maintainer-merge` records to `data/awards.json` with the task, PR, numeric author and merger, points, reservation or assignment evidence, submission and merge times, final head and merge SHAs, and closure identity. It commits awards, claims and protocol activation atomically before notification or deployment. Retries discover the same evidence and cannot award twice. One task and one PR can each earn one award. Previously recorded independent-review awards remain verified under their original policy.
 
-The selected approval review must deliberately attest that the PR satisfies the source bounty by including exactly one own line in this exact format, with the actual award issue URL:
-
-```text
-Bounty-issue: https://github.com/AstralDeep/LETS/issues/123
-```
-
-Keep the capitalization, single space and exact URL; do not indent the line, add trailing text, or include another `Bounty-issue:` line. Other review prose is allowed. A missing, wrong, duplicate or malformed attestation fails award validation. A PR description, ordinary issue mention, closing keyword or comment by another account does not substitute for this attestation in the selected independent APPROVED review. The reviewer remains responsible for judging task completion; the site verifies their explicit issue linkage and approval evidence, not the implementation's semantic correctness.
-
-The initial configured award approver is `{ "id": 16158892, "login": "armstrongsam25" }`, verified through GitHub's public user API during setup. Entries in `config.awardApprovers` require both fields; the numeric ID grants approval authority and the login is a readable recorded label. A matching ID remains authorized after a rename, while another account reusing the label does not. Add other approvers through reviewed configuration changes after verifying their GitHub IDs. The public-source token cannot inspect private collaborator permissions; the explicit reviewed allowlist is the authority for credit approval.
-
-One task and one PR can appear only once. Do not change points on credited issues. Corrections require a reviewed ledger change and explicit rationale in the PR/history. Source artifacts that are deleted or reviews that are dismissed cause subsequent validation to fail; investigate rather than silently drop credit.
+Every sync revalidates recorded awards. Display names are refreshed from the ID-verified PR author; the ledger’s original login remains unchanged. Do not change credited issue point labels or silently rewrite history. Corrections require a reviewed ledger change and an explicit reason. Missing or changed evidence fails deployment, preserving the last published site.
 
 ## Deploy and recover
 
@@ -76,7 +56,7 @@ Use Actions → Community board → Run workflow to refresh immediately. A faile
 
 Never force-push a reservation ledger after a concurrent main update. The push intentionally fails; rerun from the new main to recompute decisions. If a run persists a claim but fails before its comment, the next run posts the missing status receipt idempotently.
 
-Keep the Actions token able to commit state/claims.json; a future ruleset must explicitly accommodate that narrow workflow or move state to a separately governed branch before enforcement. CODEOWNERS requests owner review but does not itself enforce a branch rule. Award/config changes remain a maintainer review obligation. The first setup does not alter organization-wide rulesets.
+Keep the Actions token able to commit state/claims.json, state/claim-protocol.json and data/awards.json; a future ruleset must explicitly accommodate that narrow workflow or move state to a separately governed branch before enforcement. CODEOWNERS requests owner review but does not itself enforce a branch rule. Automatic awards follow the verified merge policy; manual corrections and configuration changes require maintainer review. The first setup does not alter organization-wide rulesets.
 
 ## Verification
 
