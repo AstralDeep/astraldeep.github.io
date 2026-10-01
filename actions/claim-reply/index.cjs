@@ -115,22 +115,22 @@ async function processCommand(github, repo, number, original, reply, dryRun, clo
   const evidence = name => comments.filter(item => p.receipt(item)?.userId === claim.userId).map(item => annotation(item.body, name)).filter(item => item?.id === id).sort((a, b) => b.event - a.event)[0];
   let owned = evidence('assignment');
   const intent = evidence('assignment-intent');
-  if (!owned && intent?.id === id && latest?.event === 'assigned' && p.trustedBot(latest.actor) && latest.id > intent.event) {
+  if (!owned && intent?.id === id && latest?.event === 'assigned' && p.trustedBot(latest.assigner) && latest.id > intent.event) {
     owned = { id, event: p.positiveId(latest.id) };
     metadata.push(`<!-- astral-assignment:${encodeURIComponent(id)}:${owned.event} -->`);
   }
   const assigned = issue.assignees.find(user => user.id === claim.userId);
   const ownership = owned || intent;
-  const manuallyRemoved = ownership?.id === id && latest?.event === 'unassigned' && latest.id > ownership.event && !p.trustedBot(latest.actor);
+  const manuallyRemoved = ownership?.id === id && latest?.event === 'unassigned' && latest.id > ownership.event && !p.trustedBot(latest.assigner);
   const active = live(claim, clock()) && eligibleIssue && !manuallyRemoved && !issue.assignees.some(user => user.id !== claim.userId);
   if (!active) {
-    if (assigned && owned?.id === id && latest?.id === owned.event && latest.event === 'assigned' && p.trustedBot(latest.actor)) {
+    if (assigned && owned?.id === id && latest?.id === owned.event && latest.event === 'assigned' && p.trustedBot(latest.assigner)) {
       if (!dryRun) {
         const fresh = await readState(github);
         if (live(fresh.claims[id], clock()) && eligibleIssue) return { status: 'changed-during-recovery' };
         events = await pages(github.rest.issues.listEvents, args);
         latest = latestAssignment(events, claim.userId);
-        if (latest?.id === owned.event && latest.event === 'assigned' && p.trustedBot(latest.actor)) {
+        if (latest?.id === owned.event && latest.event === 'assigned' && p.trustedBot(latest.assigner)) {
           await github.graphql('mutation($issue: ID!, $user: ID!) { removeAssigneesFromAssignable(input: {assignableId: $issue, assigneeIds: [$user]}) { clientMutationId } }', { issue: issue.node_id, user: assigned.node_id });
           const { data: verified } = await github.rest.issues.get(args);
           if (verified.assignees.some(user => user.id === claim.userId)) throw new Error('Assignment removal could not be verified');
@@ -157,7 +157,7 @@ async function processCommand(github, repo, number, original, reply, dryRun, clo
   const { data: verified } = await github.rest.issues.get(args);
   if (!verified.assignees.some(user => user.id === claim.userId) || verified.assignees.some(user => user.id !== claim.userId)) throw new Error('Assignment could not be verified');
   latest = latestAssignment(await pages(github.rest.issues.listEvents, args), claim.userId);
-  if (latest?.event === 'assigned' && p.trustedBot(latest.actor) && latest.id > floor) metadata.push(`<!-- astral-assignment:${encodeURIComponent(id)}:${p.positiveId(latest.id)} -->`);
+  if (latest?.event === 'assigned' && p.trustedBot(latest.assigner) && latest.id > floor) metadata.push(`<!-- astral-assignment:${encodeURIComponent(id)}:${p.positiveId(latest.id)} -->`);
   await save(`@${node.login} **Reserved** and assigned to you until **${claim.expiresAt}**. Link this issue in your PR and follow its acceptance checks and review requirements.`);
   return { status: 'reserved' };
 }

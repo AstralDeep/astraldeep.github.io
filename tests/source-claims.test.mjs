@@ -176,12 +176,12 @@ test('assignment event evidence distinguishes owned assignments from manual over
     const f = fixture(); const a = request(); const target = task(); target.assigneeIds = [7];
     const previous = reconcileClaims({}, [a], [task()], config, now);
     f.reply.body += `\n<!-- astral-${intent ? 'assignment-intent' : 'assignment'}:${encodeURIComponent(a.id)}:${intent ? 299 : 300} -->`;
-    f.state.events = [{ id: 300, event: 'assigned', assignee: { id: 7 }, actor: bot }];
+    f.state.events = [{ id: 300, event: 'assigned', assignee: { id: 7 }, actor: user(7), assigner: bot }];
     await sourceRequests(f.api, [target], previous, enabledAt);
     assert.deepEqual(target.managedAssignments, [{ id: a.id, userId: 7 }]);
-    f.state.events.push({ id: 301, event: 'assigned', assignee: { id: 7 }, actor: user(99) });
+    f.state.events.push({ id: 301, event: 'assigned', assignee: { id: 7 }, assigner: user(99) });
     await sourceRequests(f.api, [target], previous, enabledAt); assert.deepEqual(target.managedAssignments, []);
-    f.state.events.push({ id: 302, event: 'unassigned', assignee: { id: 7 }, actor: user(99) }); target.assigneeIds = [];
+    f.state.events.push({ id: 302, event: 'unassigned', assignee: { id: 7 }, assigner: user(99) }); target.assigneeIds = [];
     const requests = await sourceRequests(f.api, [target], previous, enabledAt);
     assert.equal(reconcileClaims(previous, requests, [target], config, now)[a.id].status, 'superseded');
   }
