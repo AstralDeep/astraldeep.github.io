@@ -1,0 +1,163 @@
+{
+  "title": "AstralDeep: bounded agents, useful interfaces",
+  "slides": [
+    {
+      "title": "An open agent ecosystem",
+      "lines": [
+        "Agents that can do useful work",
+        "Authority people can understand"
+      ],
+      "narration": [
+        "Astral Deep is an open ecosystem for agents that can do useful work.",
+        "We're building it around a simple goal: people should understand what an agent can do, even when it delegates."
+      ],
+      "sources": [
+        "AstralDeep/AGENTS.md",
+        "AstralDeep/.specify/memory/constitution.md"
+      ]
+    },
+    {
+      "title": "Authority follows the task",
+      "lines": [
+        "Who asked?",
+        "Which actions are allowed?",
+        "When does permission end?"
+      ],
+      "narration": [
+        "An agent may discover a tool, ask another agent for help, or act on sensitive information.",
+        "Each step needs a clear identity and permission boundary.",
+        "Finding a capability should never grant permission to use it."
+      ],
+      "sources": [
+        "AstralDeep/AGENTS.md",
+        "LETS/.specify/memory/constitution.md"
+      ]
+    },
+    {
+      "title": "Bounded delegation with LETS",
+      "lines": [
+        "Parent authority",
+        "Narrower child permissions",
+        "Finite budgets and expiry"
+      ],
+      "narration": [
+        "With LETS enforcement enabled, delegation has explicit limits.",
+        "A child lease receives only a bounded share of its parent's authority and resource budget, with an expiry.",
+        "The executor verifies and durably claims a receipt before the protected action."
+      ],
+      "sources": [
+        "LETS/.specify/memory/constitution.md",
+        "AstralDeep/specs/074-multirepo-lets-integration/spec.md"
+      ]
+    },
+    {
+      "title": "Checks at the action boundary",
+      "lines": [
+        "Identity and owner isolation",
+        "Tool policy and confirmation",
+        "Audit provenance"
+      ],
+      "narration": [
+        "Astral Deep's design keeps identity, tool policy, and owner isolation on the normal dispatch path.",
+        "Sensitive actions need the appropriate checks and confirmation.",
+        "Audit provenance helps explain who authorized an action and how authority reached it."
+      ],
+      "sources": [
+        "AstralDeep/AGENTS.md",
+        "AstralDeep/.specify/memory/constitution.md"
+      ]
+    },
+    {
+      "title": "Generative UI with primitives",
+      "lines": [
+        "A model proposes structured UI",
+        "Code validates and bounds it",
+        "The renderer controls output"
+      ],
+      "narration": [
+        "Useful agents also need useful interfaces.",
+        "A model can propose a form, table, or chart using structured UI primitives.",
+        "Code checks component types and references, bounds the layout, and escapes web content before rendering.",
+        "The model proposes. Code decides."
+      ],
+      "sources": [
+        "AstralDeep/AGENTS.md",
+        "AstralPrimitives/README.md",
+        "AstralProjection/.specify/memory/constitution.md"
+      ]
+    },
+    {
+      "title": "One contract across clients",
+      "lines": [
+        "Primitives defines the vocabulary",
+        "Projection renders and adapts",
+        "Deep orchestrates the work"
+      ],
+      "narration": [
+        "Astral Primitives defines the vocabulary.",
+        "Astral Projection renders and adapts it for web and native clients.",
+        "Astral Deep orchestrates the work, while Astral Plane owns durable state.",
+        "The goal is consistent meaning across devices, with components other developers can reuse."
+      ],
+      "sources": [
+        "AstralDeep/AGENTS.md",
+        "AstralProjection/README.md",
+        "AstralPlane/README.md"
+      ]
+    },
+    {
+      "title": "Open protocols and reusable parts",
+      "lines": [
+        "MCP and Agent2Agent",
+        "Versioned contracts",
+        "Independent examples"
+      ],
+      "narration": [
+        "We want these parts to connect through standard M C P, Agent to Agent, and other agent communication protocols.",
+        "That means versioned contracts, compatibility tests, and examples that work outside the full Astral stack."
+      ],
+      "sources": [
+        "AstralDeep/AGENTS.md",
+        "AstralDeep/specs/074-multirepo-lets-integration/spec.md",
+        "Owner priorities, 2026-10-01"
+      ]
+    },
+    {
+      "title": "Work that moves this forward",
+      "lines": [
+        "Security and protocol tests",
+        "Reliable voice on mobile",
+        "Client parity and reuse"
+      ],
+      "narration": [
+        "There is concrete work to do.",
+        "Help test delegation boundaries, improve protocol compatibility, or make voice survive interruptions and reconnects, especially on mobile.",
+        "Better primitive rendering, client parity, and independent examples can make the system useful to more developers."
+      ],
+      "sources": [
+        "AstralDeep/specs/065-conversational-voice/spec.md",
+        "AstralDeep/specs/075-client-local-speech/spec.md",
+        "Approved bounty review, 2026-10-01"
+      ]
+    },
+    {
+      "title": "A place to contribute",
+      "lines": [
+        "Request a task reservation",
+        "Ship a reviewed contribution",
+        "Earn recognition points",
+        "astraldeep.github.io"
+      ],
+      "narration": [
+        "The bounty board turns these goals into tasks across five repositories.",
+        "Choose a task, request a claim, and wait for your reservation before starting.",
+        "Accepted, reviewed work earns recognition points on the leaderboard.",
+        "Join us at astral deep dot github dot I O."
+      ],
+      "sources": [
+        "astraldeep.github.io/contribute.html",
+        "AstralDeep/astraldeep.github.io/data/config.json"
+      ]
+    }
+  ]
+}

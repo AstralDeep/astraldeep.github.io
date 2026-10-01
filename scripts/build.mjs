@@ -15,7 +15,13 @@ await mkdir('_site/data', { recursive: true });
 await cp('site', '_site', { recursive: true });
 const safeJSON = JSON.stringify({ ...board, repositories: config.repositories, coordinator: config.coordinator }).replaceAll('<', '\\u003c');
 const assetVersions = new Map();
-for (const filename of ['styles.css', 'theme.js', 'app.js']) {
+for (const filename of [
+  'styles.css', 'theme.js', 'app.js',
+  'assets/video/astraldeep-introduction.mp4',
+  'assets/video/astraldeep-introduction.en.vtt',
+  'assets/video/astraldeep-introduction-poster.png',
+  'assets/video/astraldeep-introduction-transcript.txt'
+]) {
   const digest = createHash('sha256').update(await readFile(`site/${filename}`)).digest('hex').slice(0, 12);
   assetVersions.set(filename, `${filename}?v=${digest}`);
 }

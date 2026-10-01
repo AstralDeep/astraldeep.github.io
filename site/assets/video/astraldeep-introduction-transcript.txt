@@ -1,0 +1,57 @@
+AstralDeep: bounded agents, useful interfaces
+
+An open agent ecosystem
+
+AstralDeep is an open ecosystem for agents that can do useful work.
+We're building it around a simple goal: people should understand what an agent can do, even when it delegates.
+
+Authority follows the task
+
+An agent may discover a tool, ask another agent for help, or act on sensitive information.
+Each step needs a clear identity and permission boundary.
+Finding a capability should never grant permission to use it.
+
+Bounded delegation with LETS
+
+With LETS enforcement enabled, delegation has explicit limits.
+A child lease receives only a bounded share of its parent's authority and resource budget, with an expiry.
+The executor verifies and durably claims a receipt before the protected action.
+
+Checks at the action boundary
+
+AstralDeep's design keeps identity, tool policy, and owner isolation on the normal dispatch path.
+Sensitive actions need the appropriate checks and confirmation.
+Audit provenance helps explain who authorized an action and how authority reached it.
+
+Generative UI with primitives
+
+Useful agents also need useful interfaces.
+A model can propose a form, table, or chart using structured UI primitives.
+Code checks component types and references, bounds the layout, and escapes web content before rendering.
+The model proposes. Code decides.
+
+One contract across clients
+
+AstralPrimitives defines the vocabulary.
+AstralProjection renders and adapts it for web and native clients.
+AstralDeep orchestrates the work, while AstralPlane owns durable state.
+The goal is consistent meaning across devices, with components other developers can reuse.
+
+Open protocols and reusable parts
+
+We want these parts to connect through standard MCP, Agent2Agent, and other agent communication protocols.
+That means versioned contracts, compatibility tests, and examples that work outside the full Astral stack.
+
+Work that moves this forward
+
+There is concrete work to do.
+Help test delegation boundaries, improve protocol compatibility, or make voice survive interruptions and reconnects, especially on mobile.
+Better primitive rendering, client parity, and independent examples can make the system useful to more developers.
+
+A place to contribute
+
+The bounty board turns these goals into tasks across five repositories.
+Choose a task, request a claim, and wait for your reservation before starting.
+Accepted, reviewed work earns recognition points on the leaderboard.
+Join us at astraldeep.github.io.
+
