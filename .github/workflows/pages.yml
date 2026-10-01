@@ -1,0 +1,66 @@
+name: Community board
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+  issues:
+    types: [opened, closed, reopened, labeled]
+  schedule:
+    - cron: '17,47 * * * *'
+permissions:
+  contents: read
+concurrency:
+  group: community-board
+  cancel-in-progress: false
+jobs:
+  build:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+      issues: write
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: main
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22'
+      - run: npm run check && npm test
+      - name: Reconcile public bounties and exclusive claims
+        run: node scripts/run.mjs --persist-claims
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+      - name: Persist claim decisions before acknowledging them
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add state/claims.json
+          if ! git diff --cached --quiet; then
+            git commit -m 'Update bounty reservations'
+            git push origin HEAD:main
+          fi
+      - name: Acknowledge claim requests
+        run: node scripts/notify.mjs
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+      - run: npm run build
+      - uses: actions/upload-pages-artifact@56afc609e74202658d3ffba0e8f6dda462b719fa
+        with:
+          path: _site
+  deploy:
+    if: github.ref == 'refs/heads/main'
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy
+        id: deployment
+        uses: actions/deploy-pages@d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e

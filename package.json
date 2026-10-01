@@ -1,0 +1,13 @@
+{
+  "name": "astraldeep-community",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "test": "node --test --experimental-test-coverage --test-coverage-lines=90 --test-coverage-include=scripts/model.mjs --test-coverage-include=scripts/github.mjs --test-coverage-include=scripts/sync.mjs tests/*.test.mjs",
+    "build": "node scripts/build.mjs",
+    "sync": "node scripts/run.mjs",
+    "check": "node --check site/app.js && node --check site/theme.js && node --check scripts/run.mjs && node --check scripts/build.mjs && node --check scripts/notify.mjs"
+  }
+}

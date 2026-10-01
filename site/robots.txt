@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://astraldeep.github.io/sitemap.xml
+
+# Public content only. This is a crawl policy, not access control or authorization.
+# Agent contribution instructions: https://astraldeep.github.io/llms.txt

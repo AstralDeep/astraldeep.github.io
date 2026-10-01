@@ -1,0 +1,23 @@
+name: Claim a bounty
+description: Reserve one approved task across the AstralDeep repositories for seven days.
+title: "[Claim] "
+labels: [claim-request]
+body:
+  - type: markdown
+    attributes:
+      value: "Choose an available task from https://astraldeep.github.io/bounties.html. Wait for the bot's accepted reservation before starting. One task per person; points have no cash value."
+  - type: input
+    id: task
+    attributes:
+      label: Task
+      description: Exact URL of an open bounty issue in one of the five supported repositories.
+      placeholder: https://github.com/AstralDeep/LETS/issues/123
+    validations:
+      required: true
+  - type: checkboxes
+    id: agreement
+    attributes:
+      label: Contribution agreement
+      options:
+        - label: I will follow the source repository's constitution, protect sensitive data, and submit tested work for maintainer review.
+          required: true

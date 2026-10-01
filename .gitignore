@@ -1,0 +1,6 @@
+_site/
+.cache/
+node_modules/
+coverage/
+*.log
+.env*
