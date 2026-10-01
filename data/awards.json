@@ -1,1 +1,24 @@
-[]
+[
+  {
+    "policy": "maintainer-merge",
+    "issue": "https://github.com/AstralDeep/AstralPlane/issues/20",
+    "pr": "https://github.com/AstralDeep/AstralPlane/pull/25",
+    "userId": 16158892,
+    "login": "armstrongsam25",
+    "points": 50,
+    "claim": {
+      "type": "reservation",
+      "id": "2",
+      "createdAt": "2026-10-01T13:18:44.936Z",
+      "expiresAt": "2026-10-08T13:18:44.936Z"
+    },
+    "submittedAt": "2026-10-01T13:43:03Z",
+    "mergedBy": 16158892,
+    "headSha": "ac923b221932f9e271a0bbd8b50da2014d46edad",
+    "mergeSha": "854c827d3d752349d39965e95ba6ea13e5ae51ce",
+    "mergedAt": "2026-10-01T14:30:51Z",
+    "closureId": "CE_lADOOY4K2s8AAAABUTGgms8AAAAHgtvuMg",
+    "closedAt": "2026-10-01T14:30:52Z",
+    "awardedAt": "2026-10-01T15:07:22.666Z"
+  }
+]
