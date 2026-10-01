@@ -112,7 +112,7 @@ async function processPr({ github, args, metadata, pr, dryRun }) {
     status = 'passed';
     body = `${mark(pr, status)}\nAll applicable PR CI workflows passed for \`${pr.head.sha.slice(0, 7)}\`.\n\n${expected.map(path => { const run = selected.get(path); return `- [${safe(run.name)}](https://github.com/${args.owner}/${args.repo}/actions/runs/${run.id})`; }).join('\n')}\n\nReady for maintainer code review.`;
   } else return { number: pr.number, status: ready ? 'draft' : 'pending', expected, observed: [...selected.keys()] };
-  const existing = receipts.find(item => item.data.status === status);
+  let existing = receipts.find(item => item.data.status === status);
   const freshRuns = await pages(github.rest.actions.listWorkflowRunsForRepo, { ...args, event: 'pull_request', head_sha: pr.head.sha }, 'workflow_runs');
   if (signature(select(freshRuns, expected, pr, metadata)) !== signature(selected)) return { number: pr.number, status: 'superseded' };
   const { data: current } = await github.rest.pulls.get({ ...args, pull_number: pr.number });
@@ -121,8 +121,22 @@ async function processPr({ github, args, metadata, pr, dryRun }) {
     const { data: reviewer } = await github.rest.users.getByUsername({ username: REVIEWER.login });
     if (reviewer.id !== REVIEWER.id) throw new Error('Maintainer identity mismatch');
     const alreadyRequested = current.requested_reviewers.some(user => user.id === REVIEWER.id);
-    if (alreadyRequested) body += `\n\n@${REVIEWER.login}, the latest commit is ready for your review.`;
-    else if (!dryRun) await github.rest.pulls.requestReviewers({ ...args, pull_number: pr.number, reviewers: [REVIEWER.login] });
+    let pending = receipts.find(item => item.data.status === 'review-pending');
+    if (alreadyRequested && !pending) body += `\n\n@${REVIEWER.login}, the latest commit is ready for your review.`;
+    else if (!dryRun) {
+      if (!pending) {
+        const { data: comment } = await github.rest.issues.createComment({ ...args, issue_number: pr.number, body: body.replace(mark(pr, 'passed'), mark(pr, 'review-pending')) });
+        pending = { comment, data: { status: 'review-pending' } };
+      }
+      if (!alreadyRequested) {
+        const reviews = await pages(github.rest.pulls.listReviews, { ...args, pull_number: pr.number });
+        if (!reviews.some(review => review.user?.id === REVIEWER.id && review.commit_id === pr.head.sha && review.submitted_at)) {
+          await github.rest.pulls.requestReviewers({ ...args, pull_number: pr.number, reviewers: [REVIEWER.login] });
+        }
+      }
+      await github.rest.issues.updateComment({ ...args, comment_id: pending.comment.id, body });
+      existing = { comment: { ...pending.comment, body }, data: { status: 'passed' } };
+    }
   }
   if (!dryRun) {
     if (existing && existing.comment.body !== body && status !== 'passed') await github.rest.issues.updateComment({ ...args, comment_id: existing.comment.id, body });

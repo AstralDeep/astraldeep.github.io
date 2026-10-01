@@ -12,13 +12,14 @@ function fixture(repo = 'LETS') {
   const workflow = 'on:\n  pull_request:\n  push:\n    branches: [main]\n';
   const files = [{ filename: 'src/fix.py' }];
   const makeRun = (id, path = '.github/workflows/ci.yml', changes = {}) => ({ id, workflow_id: id + 100, name: path, path, repository: { id: 100 }, head_repository: { id: 200 }, head_sha: sha, head_branch: 'fix', event: 'pull_request', status: 'completed', conclusion: 'success', run_attempt: 1, ...changes });
-  const state = { metadata, pr, files, workflows: {}, runs: [makeRun(1), ...(repo === 'LETS' ? [makeRun(2, '.github/workflows/security.yml')] : [])], comments: [], jobs: [], writes: [], getCount: 0 };
+  const state = { metadata, pr, files, workflows: {}, runs: [makeRun(1), ...(repo === 'LETS' ? [makeRun(2, '.github/workflows/security.yml')] : [])], comments: [], jobs: [], reviews: [], writes: [], getCount: 0 };
   const github = { rest: {
     repos: { get: async () => ({ data: state.metadata }), getContent: async args => ({ data: { type: 'file', encoding: 'base64', content: Buffer.from(state.workflows[args.path] ?? workflow).toString('base64') } }) },
     pulls: {
       list: async args => ({ data: args.page === 1 ? [state.pr] : [] }),
       get: async () => { state.getCount++; return { data: structuredClone(state.pr) }; },
       listFiles: async args => ({ data: state.files.slice((args.page - 1) * 100, args.page * 100) }),
+      listReviews: async args => ({ data: state.reviews.slice((args.page - 1) * 100, args.page * 100) }),
       requestReviewers: async args => { state.writes.push(['review', args]); state.pr.requested_reviewers.push({ id: 16158892 }); return { data: state.pr }; },
     },
     actions: {
@@ -27,7 +28,7 @@ function fixture(repo = 'LETS') {
     },
     issues: {
       listComments: async args => ({ data: state.comments.slice((args.page - 1) * 100, args.page * 100) }),
-      createComment: async args => { state.writes.push(['comment', args]); state.comments.push({ id: state.comments.length + 10, body: args.body, user: bot }); return {}; },
+      createComment: async args => { state.writes.push(['comment', args]); const comment = { id: state.comments.length + 10, body: args.body, user: bot }; state.comments.push(comment); return { data: structuredClone(comment) }; },
       updateComment: async args => { state.writes.push(['edit', args]); state.comments.find(comment => comment.id === args.comment_id).body = args.body; return {}; },
     },
     users: { getByUsername: async () => ({ data: { id: 16158892 } }) },
@@ -41,9 +42,9 @@ test('all LETS workflows must pass before one review request; retries are silent
   assert.equal((await f.run()).results[0].status, 'pending'); assert.equal(f.state.writes.length, 0);
   f.state.runs[1].status = 'completed'; f.state.runs[1].conclusion = 'success';
   assert.equal((await f.run()).results[0].status, 'passed');
-  assert.deepEqual(f.state.writes.map(item => item[0]), ['review', 'comment']);
+  assert.deepEqual(f.state.writes.map(item => item[0]), ['comment', 'review', 'edit']);
   assert.match(f.state.comments[0].body, /All applicable/);
-  await f.run(); assert.equal(f.state.writes.length, 2);
+  await f.run(); assert.equal(f.state.writes.length, 3);
 });
 
 test('failure mentions author with failed job and step links, then edits one receipt', async () => {
@@ -101,21 +102,21 @@ for (const conclusion of ['action_required', 'neutral', 'skipped', null]) {
 
 test('latest run supersedes earlier failure; cancelled current runs request repairs', async () => {
   const f = fixture(); f.state.runs[0].conclusion = 'failure'; f.state.runs.push(f.makeRun(3)); await f.run();
-  assert.equal(f.state.writes[0][0], 'review');
+  assert.equal(f.state.writes[1][0], 'review');
   const g = fixture(); g.state.runs[0].conclusion = 'cancelled'; await g.run(); assert.match(g.state.comments[0].body, /cancelled/);
 });
 
 test('empty fork pull_requests arrays are supported by immutable repo, branch and SHA', async () => {
-  const f = fixture(); f.state.runs.forEach(run => { run.pull_requests = []; }); await f.run(); assert.equal(f.state.writes[0][0], 'review');
+  const f = fixture(); f.state.runs.forEach(run => { run.pull_requests = []; }); await f.run(); assert.equal(f.state.writes[1][0], 'review');
 });
 
 test('Projection ignores path-inapplicable native lanes and requires applicable ones', async () => {
   const f = fixture('AstralProjection');
   for (const name of ['android-ci.yml', 'apple-ci.yml']) f.state.workflows['.github/workflows/' + name] = `on:\n  pull_request:\n    paths:\n      - '${name.startsWith('android') ? 'android-client/**' : 'scripts/**'}'\n  push:\n`;
-  await f.run(); assert.equal(f.state.writes[0][0], 'review');
+  await f.run(); assert.equal(f.state.writes[1][0], 'review');
   const g = fixture('AstralProjection'); g.state.workflows = f.state.workflows; g.state.files = [{ filename: 'scripts/fix.py' }];
   await g.run(); assert.equal(g.state.writes.length, 0);
-  g.state.runs.push(g.makeRun(3, '.github/workflows/apple-ci.yml')); await g.run(); assert.equal(g.state.writes[0][0], 'review');
+  g.state.runs.push(g.makeRun(3, '.github/workflows/apple-ci.yml')); await g.run(); assert.equal(g.state.writes[1][0], 'review');
 });
 
 test('renamed and removed files participate in path filters', async () => {
@@ -129,7 +130,7 @@ test('renamed and removed files participate in path filters', async () => {
 test('human forged receipts and malformed bot receipts never suppress notifications', async () => {
   const f = fixture(); await f.run(); const body = f.state.comments[0].body;
   const g = fixture(); g.state.comments = [{ id: 1, body, user: { id: 5, type: 'User' } }, { id: 2, body: '<!-- astral-pr-ci:v1:bad -->', user: bot }];
-  await g.run(); assert.equal(g.state.writes[0][0], 'review');
+  await g.run(); assert.equal(g.state.writes[1][0], 'review');
   assert.equal(receipt({ body, user: bot }, { number: 8, head: { sha } }), null);
 });
 
@@ -169,8 +170,8 @@ for (const mutate of [f => { f.context.ref = 'refs/heads/candidate'; }, f => { f
 
 test('non-PR completion events are ignored and schedule reconciles open PRs', async () => {
   const f = fixture(); f.context.eventName = 'workflow_run'; f.context.payload.workflow_run = { event: 'push' }; assert.equal((await f.run()).status, 'ignored');
-  f.context.payload.workflow_run.event = 'pull_request'; await f.run(); assert.equal(f.state.writes[0][0], 'review');
-  const g = fixture(); g.context.eventName = 'schedule'; await g.run(); assert.equal(g.state.writes[0][0], 'review');
+  f.context.payload.workflow_run.event = 'pull_request'; await f.run(); assert.equal(f.state.writes[1][0], 'review');
+  const g = fixture(); g.context.eventName = 'schedule'; await g.run(); assert.equal(g.state.writes[1][0], 'review');
 });
 
 test('closed, deleted-head and foreign-base PRs are ineligible', async () => {
@@ -201,12 +202,30 @@ test('same-head success failure success resolves failure without a duplicate rev
   const f = fixture(); await f.run(); f.state.runs[0].conclusion = 'failure'; f.state.runs[0].run_attempt = 2;
   await f.run(); f.state.runs[0].conclusion = 'success'; f.state.runs[0].run_attempt = 3; await f.run();
   assert.match(f.state.comments[1].body, /resolved/);
-  assert.equal(f.state.writes.filter(item => item[0] === 'review').length, 1); await f.run(); assert.equal(f.state.writes.filter(item => item[0] === 'edit').length, 1);
+  assert.equal(f.state.writes.filter(item => item[0] === 'review').length, 1); await f.run(); assert.equal(f.state.writes.filter(item => item[0] === 'edit').length, 2);
 });
 
 test('one PR provider error does not suppress other PR notifications', async () => {
   const f = fixture(); const second = structuredClone(f.state.pr); second.number = 8;
   f.github.rest.pulls.list = async () => ({ data: [f.state.pr, second] });
   f.github.rest.pulls.get = async args => { if (args.pull_number === 7) throw new Error('Unavailable'); return { data: second }; };
-  const result = await f.run(); assert.equal(result.status, 'incomplete'); assert.equal(result.errors[0].number, 7); assert.equal(result.results[0].number, 8); assert.equal(f.state.writes[0][0], 'review');
+  const result = await f.run(); assert.equal(result.status, 'incomplete'); assert.equal(result.errors[0].number, 7); assert.equal(result.results[0].number, 8); assert.equal(f.state.writes[1][0], 'review');
+});
+
+test('partial writes and ambiguous HTTP timeouts recover without a second maintainer notification', async () => {
+  for (const method of ['createComment', 'requestReviewers', 'updateComment']) {
+    const f = fixture(); const owner = method === 'requestReviewers' ? f.github.rest.pulls : f.github.rest.issues;
+    const original = owner[method]; let fail = true;
+    owner[method] = async args => { const result = await original(args); if (fail) { fail = false; throw new Error('Response lost after server write'); } return result; };
+    assert.equal((await f.run()).status, 'incomplete'); await f.run(); await f.run();
+    assert.equal(f.state.comments.length, 1); assert.doesNotMatch(f.state.comments[0].body, /@armstrongsam25/);
+    assert.equal(f.state.writes.filter(item => item[0] === 'review').length, 1);
+    assert.equal(receipt(f.state.comments[0], f.state.pr).status, 'passed');
+  }
+});
+
+test('a completed current-head review consumes a pending request without re-requesting', async () => {
+  const f = fixture(); const original = f.github.rest.pulls.requestReviewers;
+  f.github.rest.pulls.requestReviewers = async args => { await original(args); f.state.pr.requested_reviewers = []; f.state.reviews.push({ user: { id: 16158892 }, commit_id: sha, submitted_at: '2026-10-01T17:00:00Z' }); throw new Error('Response lost'); };
+  await f.run(); await f.run(); assert.equal(f.state.writes.filter(item => item[0] === 'review').length, 1); assert.equal(receipt(f.state.comments[0], f.state.pr).status, 'passed');
 });
