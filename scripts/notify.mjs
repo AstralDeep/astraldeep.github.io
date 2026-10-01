@@ -7,6 +7,7 @@ if (process.env.GITHUB_REPOSITORY !== config.coordinator || process.env.GITHUB_R
 const api = new GitHub(process.env.GITHUB_TOKEN);
 const claims = JSON.parse(await readFile('state/claims.json', 'utf8'));
 for (const claim of Object.values(claims)) {
+  if (claim.source) continue;
   const marker = `<!-- astral-claim:${claim.request}:${claim.status} -->`;
   const path = `/repos/${config.coordinator}/issues/${claim.request}/comments`;
   const comments = await api.pages(path);

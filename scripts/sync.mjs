@@ -1,7 +1,8 @@
 // Collects public task state and validates awards before reconciling central claim requests.
 import { taskFromIssue, reconcileClaims, validateAwards, verifyAwardEvidence, summarize } from './model.mjs';
+import { sourceRequests } from './source-claims.mjs';
 
-export async function synchronize(api, config, previous, awards, now) {
+export async function synchronize(api, config, previous, awards, now, enabledAt = null) {
   const tasks = [];
   for (const repository of config.repositories) {
     const metadata = await api.request(`/repos/${repository}`);
@@ -24,6 +25,7 @@ export async function synchronize(api, config, previous, awards, now) {
     const events = await api.pages(`/repos/${config.coordinator}/issues/${request.number}/events`);
     request.everClosed = events.some(event => event.event === 'closed');
   }
+  requests.push(...await sourceRequests(api, tasks, previous, enabledAt));
   const claims = reconcileClaims(previous, requests, tasks, config, now);
   return { claims, board: summarize(tasks, claims, verifiedAwards, now) };
 }

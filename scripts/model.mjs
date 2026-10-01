@@ -1,4 +1,7 @@
 // Validates task identities, reconciles exclusive reservations, and computes points for the community board.
+import protocol from '../actions/claim-reply/protocol.cjs';
+const { accountId } = protocol;
+
 export function taskKey(repository, number) {
   return `${repository}#${number}`;
 }
@@ -7,11 +10,6 @@ export function parseTask(value, config) {
   const match = /^https:\/\/github\.com\/([^/]+\/[^/]+)\/issues\/([1-9]\d*)$/.exec(value.trim());
   if (!match || !config.repositories.includes(match[1]) || !Number.isSafeInteger(Number(match[2]))) return null;
   return { repository: match[1], number: Number(match[2]), key: taskKey(match[1], Number(match[2])) };
-}
-
-function accountId(user) {
-  if (!Number.isSafeInteger(user?.id) || user.id < 1 || typeof user.login !== 'string' || !/^[a-z\d][a-z\d-]{0,38}(?:\[bot\])?$/i.test(user.login)) throw new Error('Invalid GitHub account identity');
-  return user.id;
 }
 
 export function taskFromIssue(repository, issue, config) {
@@ -36,11 +34,15 @@ export function claimTarget(body, config) {
   return fields.length === 1 ? parseTask(fields[0][1], config) : null;
 }
 
+function commandOrder(left, right) {
+  return (Date.parse(left.source?.commandAt || left.createdAt) || 0) - (Date.parse(right.source?.commandAt || right.createdAt) || 0) || (left.source?.comment || 0) - (right.source?.comment || 0);
+}
+
 export function reconcileClaims(previous, requests, tasks, config, now) {
   const claims = structuredClone(previous);
   const clock = Date.parse(now);
   if (!Number.isFinite(clock)) throw new Error('Invalid reconciliation time');
-  const requestMap = new Map(requests.map(issue => [String(issue.number), issue]));
+  const requestMap = new Map(requests.map(issue => [String(issue.source ? issue.id : issue.number), issue]));
   const taskMap = new Map(tasks.map(task => [task.key, task]));
   for (const [id, claim] of Object.entries(claims)) {
     accountId({ id: claim.userId, login: claim.login });
@@ -48,36 +50,70 @@ export function reconcileClaims(previous, requests, tasks, config, now) {
     if (request) {
       if (accountId(request.user) !== claim.userId) throw new Error('Claim request owner does not match stored account');
       claim.login = request.user.login;
+      if (typeof request.user.node_id === 'string') claim.userNodeId = request.user.node_id;
     }
     if (claim.status !== 'active') continue;
     const task = taskMap.get(claim.key);
-    if (!request || request.state !== 'open' || request.everClosed) claim.status = 'released';
+    if (!claim.source && (!request || request.state !== 'open' || request.everClosed)) claim.status = 'released';
     else if (Date.parse(claim.expiresAt) <= clock) claim.status = 'expired';
     else if (!task || task.state !== 'open') claim.status = 'finished';
+    else if (task.manuallyReleasedClaims?.includes(id)) { claim.status = 'superseded'; claim.reason = 'A maintainer removed the source assignment.'; }
     else if (task.assigneeIds.some(userId => userId !== claim.userId)) claim.status = 'superseded';
     if (claim.status !== 'active') claim.endedAt = now;
   }
   const active = Object.values(claims).filter(claim => claim.status === 'active');
-  for (const request of [...requests].sort((a, b) => a.number - b.number)) {
-    if (request.pull_request || claims[request.number] || request.state !== 'open') continue;
+  for (const request of [...requests].sort((a, b) => (Date.parse(a.created_at) || 0) - (Date.parse(b.created_at) || 0) || a.number - b.number || String(a.id).localeCompare(String(b.id)))) {
+    const id = String(request.source ? request.id : request.number);
+    if (request.pull_request || claims[id] || request.state !== 'open') continue;
     if (!request.labels.some(label => (label.name || label) === 'claim-request')) continue;
-    const target = claimTarget(request.body || '', config);
+    const target = request.source ? request.target : claimTarget(request.body || '', config);
     const task = target && taskMap.get(target.key);
     const userId = accountId(request.user);
     const login = request.user.login;
+    const current = active.find(claim => claim.status === 'active' && claim.key === target?.key && claim.userId === userId);
     let reason = '';
     if (request.everClosed) reason = 'Closed claim requests cannot be reused. Open a new request.';
     else if (request.user.type !== 'User') reason = 'Claims must be made by a human GitHub account.';
+    else if (request.changedCommand) reason = 'This command was edited. Post a new /claim or /unclaim comment.';
     else if (!task || task.state !== 'open') reason = 'Choose an open, approved bounty from the board.';
-    else if (task.assigneeIds.some(assigneeId => assigneeId !== userId)) reason = 'The source issue is assigned to another contributor.';
-    else if (active.some(claim => claim.key === target.key)) reason = 'This bounty already has an active claim.';
-    else if (active.some(claim => claim.userId === userId) || tasks.some(item => item.state === 'open' && item.key !== target.key && item.assigneeIds.includes(userId))) reason = 'Finish or release your existing bounty first.';
+    if (request.source?.command === 'unclaim') {
+      const cancellationValid = !reason;
+      if (!reason && current && commandOrder(current, { source: request.source }) <= 0) {
+        current.status = 'released'; current.endedAt = now; current.releasedBy = id;
+      } else if (!reason) reason = 'You have no active reservation on this issue. Manual assignments require a maintainer.';
+      claims[id] = { source: request.source, userId, login, key: target?.key || null, status: reason ? 'rejected' : 'released', cancellationValid, reason, createdAt: now, endedAt: now };
+      continue;
+    }
+    if (!reason && request.source && current) {
+      claims[id] = { source: request.source, userId, login, key: target.key, status: 'duplicate', reservation: Object.keys(claims).find(key => claims[key] === current), reason: 'Your existing reservation remains unchanged.', createdAt: now };
+      continue;
+    }
+    const prior = request.source && Object.entries(claims).find(([, item]) => {
+      if (item.key !== target?.key || item.userId !== userId || !item.expiresAt || item.status === 'rejected' || item.status === 'duplicate') return false;
+      const start = item.source?.commandAt || item.createdAt;
+      const end = claims[item.releasedBy]?.source?.commandAt || item.endedAt || item.expiresAt;
+      const submitted = Date.parse(request.source.commandAt);
+      return submitted >= Date.parse(start) && submitted < Math.min(Date.parse(end), Date.parse(item.expiresAt));
+    });
+    if (!reason && prior) {
+      claims[id] = { source: request.source, userId, login, key: target.key, status: 'duplicate', reservation: prior[0], reason: 'This command was posted during your earlier reservation; its expiry is unchanged.', createdAt: now };
+      continue;
+    }
+    const release = request.source && Object.entries(claims).find(([, item]) => item.source?.command === 'unclaim' && item.cancellationValid === true && item.userId === userId && item.key === target?.key && commandOrder({ source: request.source }, item) < 0);
+    if (!reason && release) {
+      claims[id] = { source: request.source, userId, login, key: target.key, status: 'released', reason: 'A later /unclaim cancelled this command.', createdAt: now, endedAt: now, releasedBy: release[0] };
+      continue;
+    }
+    if (!reason && request.source && tasks.some(item => (item.key === target.key || item.assigneeIds.includes(userId)) && item.managedAssignments?.some(assignment => claims[assignment.id] && claims[assignment.id].status !== 'active'))) continue;
+    if (!reason && task.assigneeIds.some(assigneeId => assigneeId !== userId)) reason = 'The source issue is assigned to another contributor.';
+    else if (!reason && active.some(claim => claim.status === 'active' && claim.key === target.key)) reason = 'This bounty already has an active claim.';
+    else if (!reason && (active.some(claim => claim.status === 'active' && claim.userId === userId) || tasks.some(item => item.state === 'open' && item.key !== target.key && item.assigneeIds.includes(userId)))) reason = 'Finish or release your existing bounty first.';
     const claim = {
-      request: request.number, userId, login, key: target?.key || null, status: reason ? 'rejected' : 'active',
+      ...(request.source ? { source: request.source } : { request: request.number }), userId, login, ...(typeof request.user.node_id === 'string' ? { userNodeId: request.user.node_id } : {}), key: target?.key || null, status: reason ? 'rejected' : 'active',
       reason, createdAt: now,
       expiresAt: new Date(clock + config.claimHours * 3600000).toISOString(),
     };
-    claims[request.number] = claim;
+    claims[id] = claim;
     if (!reason) active.push(claim);
   }
   return claims;
@@ -132,7 +168,8 @@ export function summarize(tasks, claims, awards, now) {
     generatedAt: now, tasks: tasks.map(task => {
       const claim = Object.values(claims).find(item => item.key === task.key && item.status === 'active' && Date.parse(item.expiresAt) > Date.parse(now));
       const award = awards.find(item => item.issue === task.url);
-      return { ...task, status: award ? 'completed' : task.state === 'closed' ? 'closed' : claim || task.assignees.length ? 'claimed' : 'available', claim: claim || null };
+      const { managedAssignments, manuallyReleasedClaims, ...publicTask } = task;
+      return { ...publicTask, status: award ? 'completed' : task.state === 'closed' ? 'closed' : claim || task.assignees.length ? 'claimed' : 'available', claim: claim || null };
     }),
     claims: Object.values(claims), awards, leaderboard,
   };

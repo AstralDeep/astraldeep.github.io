@@ -1,12 +1,12 @@
-name: Bounty claim guidance
-description: Reply to source-issue claim commands with the central claim form or existing assignment status.
+name: Bounty claim coordination
+description: Queue claim commands and mirror durable central reservations into source issues.
 inputs:
   comment-id:
-    description: Existing comment ID for a maintainer recovery run.
+    description: Existing comment ID to reconcile, or empty to recover all claims in this repository.
     required: false
     default: ''
   dry-run:
-    description: Report the intended reply without posting it.
+    description: Inspect decisions without changing comments or assignments.
     required: false
     default: 'false'
 runs:

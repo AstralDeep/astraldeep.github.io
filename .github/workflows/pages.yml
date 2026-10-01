@@ -6,7 +6,7 @@ on:
   issues:
     types: [opened, closed, reopened, labeled]
   schedule:
-    - cron: '17,47 * * * *'
+    - cron: '2-57/5 * * * *'
 permissions:
   contents: read
 concurrency:
@@ -36,7 +36,7 @@ jobs:
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add state/claims.json
+          git add state/claims.json state/claim-protocol.json
           if ! git diff --cached --quiet; then
             git commit -m 'Update bounty reservations'
             git push origin HEAD:main
