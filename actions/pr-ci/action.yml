@@ -1,0 +1,21 @@
+name: Pull request CI coordination
+description: Report PR CI failures and notify the maintainer after all applicable workflows pass.
+inputs:
+  dry-run:
+    description: Preview decisions without sending notifications.
+    required: false
+    default: 'false'
+runs:
+  using: composite
+  steps:
+    - uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3
+      env:
+        ASTRAL_PR_CI_ACTION_PATH: ${{ github.action_path }}
+        ASTRAL_PR_CI_DRY_RUN: ${{ inputs.dry-run }}
+      with:
+        retries: 0
+        script: |
+          const { coordinate } = require(process.env.ASTRAL_PR_CI_ACTION_PATH + '/index.cjs');
+          const result = await coordinate({ github, context, dryRun: process.env.ASTRAL_PR_CI_DRY_RUN });
+          core.info(JSON.stringify(result));
+          if (result.errors?.length) core.setFailed('Some PR notifications could not be reconciled; see the per-PR errors above.');

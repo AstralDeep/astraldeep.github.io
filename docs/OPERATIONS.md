@@ -58,6 +58,16 @@ Never force-push a reservation ledger after a concurrent main update. The push i
 
 Keep the Actions token able to commit state/claims.json, state/claim-protocol.json and data/awards.json; a future ruleset must explicitly accommodate that narrow workflow or move state to a separately governed branch before enforcement. CODEOWNERS requests owner review but does not itself enforce a branch rule. Automatic awards follow the verified merge policy; manual corrections and configuration changes require maintainer review. The first setup does not alter organization-wide rulesets.
 
+## PR CI notifications
+
+The commit-pinned `actions/pr-ci` action reports qualification results in the five core source repositories. Each repository's separate `pr-ci-notifications.yml` controller runs on completion of its monitored workflows, with scheduled recovery every 15 minutes and an exact-main-only manual dry-run option. It uses only `actions: read`, `issues: write`, and `pull-requests: write` with the built-in token. It checks out no repository code, executes no PR input, downloads no artifacts, and holds no secrets, OIDC, approval, merge, publishing, or release authority.
+
+First-time contributors still need maintainer approval to start CI. This controller never approves or reruns workflows. On a current-head failure it tags the PR author and links failed jobs and steps, asking them to fix the CI issues and push changes. Later failure details update the same trusted bot receipt. Older heads and superseded attempts cannot generate notifications. A successful rerun marks the failure receipt resolved.
+
+Review readiness requires successful current-head PR-event runs from all applicable qualification workflows: Deep CI, Plane CI, Primitives CI qualification, Projection CI plus path-applicable Android/Apple lanes, and both LETS ci/security. Workflow paths come from the PR base commit; complete renamed/removed file inventories determine native applicability. Missing, pending, approval-required, skipped, neutral, or unsuccessful runs cannot qualify. Fork runs with an empty `pull_requests` list are matched using repository IDs, branch and head SHA.
+
+Non-draft successful PRs request review from the ID-verified `armstrongsam25`. If a review is already pending, a new-head success receipt tags him instead. One success notification is sent per head SHA; repeated completion and recovery events stay silent. Sam's own PRs receive a success receipt without an impossible self-review request. This notification is an invitation to review, not approval to merge. Provider errors fail the controller while allowing other open PRs to reconcile; the next recovery run retries.
+
 ## Verification
 
 `npm test` uses deterministic built-in Node tests, with a 90% line gate over all core API, synchronization, and claim/award model modules. Thin CLI/file wrappers and browser behavior are covered by build checks and live browser verification; this is not claimed as whole-site coverage. Product suites are separate from site checks. No remote mutations occur during unit tests.
