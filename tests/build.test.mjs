@@ -5,6 +5,7 @@ import { mkdtemp, cp, mkdir, readFile, writeFile, readdir, rm } from 'node:fs/pr
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { spawnSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
 
 test('build excludes internal drafts, safely embeds data, and fails deployment without a sync', async () => {
   const root = await mkdtemp(join(tmpdir(), 'astral-site-test-'));
@@ -31,6 +32,10 @@ test('build excludes internal drafts, safely embeds data, and fails deployment w
       assert.ok(text.includes('Skip to content'));
       assert.ok(text.includes('Content-Security-Policy'));
       for (const asset of ['styles.css', 'theme.js', 'app.js']) assert.ok(new RegExp(`="${asset.replace('.', '\\.')}\\?v=[a-f0-9]{12}"`).test(text));
+      for (const asset of ['assets/astraldeep-icon.png', 'assets/astraldeep-wordmark.png']) {
+        const digest = createHash('sha256').update(await readFile(join(root, 'site', asset))).digest('hex').slice(0, 12);
+        assert.ok(text.includes(`${asset}?v=${digest}`), `${page}: current brand asset version`);
+      }
       const urls = [...text.matchAll(/(?:href|src)="([^"#?]+)(?:[?#][^"]*)?"/g)].map(match => match[1]).filter(url => !url.startsWith('http'));
       for (const url of urls) assert.ok((await readFile(join(root, '_site', url))).length > 0, `${page}: ${url}`);
     }

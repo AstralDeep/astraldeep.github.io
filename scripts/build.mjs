@@ -17,6 +17,7 @@ const safeJSON = JSON.stringify({ ...board, repositories: config.repositories, c
 const assetVersions = new Map();
 for (const filename of [
   'styles.css', 'theme.js', 'app.js',
+  'assets/astraldeep-icon.png', 'assets/astraldeep-wordmark.png',
   'assets/video/astraldeep-introduction.mp4',
   'assets/video/astraldeep-introduction.en.vtt',
   'assets/video/astraldeep-introduction-poster.png',
