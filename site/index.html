@@ -8,7 +8,56 @@
 <header class="site-header"><a class="brand" href="index.html" aria-label="AstralDeep home"><img class="brand-wordmark" src="assets/astraldeep-wordmark.png" alt="AstralDeep" width="1058" height="271"></a><nav aria-label="Main navigation"><a href="index.html" aria-current="page">Ecosystem</a><a href="bounties.html">Bounty board</a><a href="leaderboard.html">Leaderboard</a><a href="contribute.html">Contribute</a></nav><button id="theme-toggle" class="theme-toggle" type="button" aria-label="Switch to light mode">☼ Light</button><a class="github-link" href="https://github.com/AstralDeep">GitHub <span aria-hidden="true">↗</span></a></header>
 <main id="main">
 <section class="hero"><div class="hero-copy"><p class="intro">An open invitation to build</p><h1>Make the pieces<br>work together.</h1><p class="lede">Help build agents that speak the same language, voice that works wherever you are, and security that travels with every task.</p><div class="actions"><a class="button primary" href="bounties.html">Explore the bounties</a><a class="text-link" href="contribute.html">How to contribute</a></div><p class="hero-note">Five repositories. One community. Credit for work that ships.</p></div>
-<figure class="system-map"><svg viewBox="0 0 540 430" role="img" aria-labelledby="map-title map-desc"><title id="map-title">Five parts of the AstralDeep ecosystem</title><desc id="map-desc">AstralPrimitives defines UI, AstralProjection renders it, AstralDeep orchestrates agents, AstralPlane owns durable state, and LETS bounds execution authority.</desc><g fill="none" stroke="#b7c9e4" stroke-width="1.5"><ellipse cx="270" cy="215" rx="180" ry="150"/><ellipse cx="270" cy="215" rx="232" ry="94" transform="rotate(-35 270 215)"/><path d="M102 107L270 212L435 111M270 212L126 331M270 212L423 326"/></g><g fill="#edf4ff" stroke="#b7c9e4"><circle cx="102" cy="107" r="39"/><circle cx="435" cy="111" r="39"/><circle cx="126" cy="331" r="39"/><circle cx="423" cy="326" r="39"/></g><circle class="map-center" cx="270" cy="212" r="63" fill="#1A1E2E"/><image href="assets/astraldeep-icon.png" x="225" y="155" width="90" height="94"/><g text-anchor="middle" font-family="Segoe UI, sans-serif" font-size="23" fill="#2446c9"><text x="102" y="116">{ }</text><text x="435" y="119">▤</text><text x="126" y="339">▱</text><text x="423" y="334">◇</text><text x="270" y="274" font-size="16" font-weight="600">AstralDeep</text><text x="270" y="294" font-size="12">Orchestrate</text></g><g text-anchor="middle" fill="#173054" font-family="Segoe UI, sans-serif" font-size="15" font-weight="600"><text x="102" y="53">Primitives</text><text x="435" y="58">Projection</text><text x="126" y="393">Plane</text><text x="423" y="390">LETS</text></g><g text-anchor="middle" fill="#50627f" font-family="Segoe UI, sans-serif" font-size="12"><text x="102" y="72">Define</text><text x="435" y="77">Render</text><text x="126" y="412">Persist</text><text x="423" y="409">Bound authority</text></g></svg><figcaption>Use a component. Connect the whole system.</figcaption></figure></section>
+<figure class="system-map">
+<svg class="ecosystem-diagram" viewBox="0 0 540 530" role="img" aria-labelledby="map-title map-desc">
+<title id="map-title">The AstralDeep component stack</title>
+<desc id="map-desc">Primitives defines the UI and Projection renders it across clients. AstralDeep orchestrates agents within LETS bounded execution authority. AstralPlane provides durable state beneath the runtime.</desc>
+<defs>
+  <linearGradient id="runtime-surface" x1="0" y1="0" x2="1" y2="1"><stop class="surface-start"/><stop class="surface-end" offset="1"/></linearGradient>
+  <linearGradient id="authority-stroke" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#6366f1"/><stop stop-color="#8b5cf6" offset="1"/></linearGradient>
+  <radialGradient id="runtime-glow"><stop stop-color="#6366f1" stop-opacity=".13"/><stop stop-color="#6366f1" stop-opacity="0" offset="1"/></radialGradient>
+</defs>
+<g class="diagram-icon" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <path d="M66 47H57V83H66M80 47H89V83H80M74 52L70 78"/>
+  <rect x="332" y="46" width="41" height="29" rx="3"/><path d="M346 75V82M340 82H352"/><rect x="365" y="59" width="14" height="25" rx="2"/>
+</g>
+<g class="diagram-title" font-size="23" font-weight="600">
+  <text x="105" y="72">Primitives</text><text x="386" y="72">Projection</text>
+</g>
+<g class="diagram-caption" font-size="18">
+  <text x="105" y="103">Define the UI</text><text x="332" y="103">Render on any client</text>
+</g>
+<g class="diagram-connector" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+  <path d="M254 66H296M290 60L296 66L290 72"/>
+  <path d="M398 124V147H434V210M428 204L434 210L440 204"/>
+  <path d="M270 384V428M264 422L270 428L276 422"/>
+</g>
+<path class="authority-fill" d="M40 183H500V362L479 383H40L19 362V204Z"/>
+<path d="M40 183H49M338 183H500V362L479 383H40L19 362V204L40 183" fill="none" stroke="url(#authority-stroke)" stroke-width="1.5"/>
+<g class="diagram-icon" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+  <path d="M70 171L81 175V184C81 191 76 196 70 199C64 196 59 191 59 184V175Z"/><path d="M66 184L69 187L75 180"/>
+</g>
+<text class="diagram-title" x="93" y="191" font-size="23" font-weight="600">LETS</text>
+<text class="diagram-caption" x="164" y="190" font-size="18">Bounded authority</text>
+<ellipse cx="265" cy="290" rx="240" ry="138" fill="url(#runtime-glow)"/>
+<path class="runtime-edge" d="M67 228H469L490 249V342L469 363H67L46 342V249Z"/>
+<path d="M67 216H469L490 237V330L469 351H67L46 330V237Z" fill="url(#runtime-surface)" class="runtime-outline"/>
+<path class="runtime-highlight" d="M68 217H468L488 237" fill="none" stroke-width="1.5"/>
+<image href="assets/astraldeep-icon.png" x="73" y="231" width="108" height="113"/>
+<text class="diagram-title" x="211" y="270" font-size="32" font-weight="600">AstralDeep</text>
+<text class="diagram-caption" x="212" y="303" font-size="20">Agent orchestration</text>
+<path class="runtime-divider" d="M211 317H443" fill="none"/>
+<g class="diagram-caption" font-size="16"><text x="212" y="339">Agents</text><text x="298" y="339">Tools</text><text x="375" y="339">Voice</text></g>
+<path class="storage-surface" d="M67 443H473L489 459V497H51V459Z"/>
+<path class="storage-edge" d="M51 497H489M51 490H489" fill="none"/>
+<g class="diagram-icon" fill="none" stroke-width="1.6">
+  <ellipse cx="91" cy="461" rx="15" ry="5"/><path d="M76 461V479C76 486 106 486 106 479V461M76 470C76 477 106 477 106 470"/>
+</g>
+<text class="diagram-title" x="127" y="478" font-size="24" font-weight="600">Plane</text>
+<text class="diagram-caption" x="270" y="477" font-size="19">Durable state</text>
+</svg>
+<figcaption>Independent parts. A shared foundation.</figcaption>
+</figure></section>
 <section class="focus-section"><div class="section-heading"><h2>Where your work matters</h2><p>Four directions for a more useful ecosystem.</p></div><div class="tracks"><article><span class="track-mark">↔</span><h3>Speak the standard</h3><p>MCP, Agent2Agent, and clear contracts that connect to other developers’ tools.</p><a href="bounties.html?track=interoperability">Interoperability bounties</a></article><article><span class="track-mark">≋</span><h3>Keep the conversation</h3><p>Reliable speech, interruptions, and reconnection across web, desktop, and mobile.</p><a href="bounties.html?track=voice">Voice bounties</a></article><article><span class="track-mark">◇</span><h3>Carry the guardrails</h3><p>LETS authority limits, trusted execution, and checks that hold across boundaries.</p><a href="bounties.html?track=security">Security bounties</a></article><article><span class="track-mark">⊞</span><h3>Build beyond Astral</h3><p>Independent packages, useful examples, and interfaces that stand on their own.</p><a href="bounties.html?track=reusability">Reusability bounties</a></article></div></section>
 <section class="repo-section"><div class="section-heading"><h2>Find your part of the system</h2><a href="https://github.com/AstralDeep">Explore the organization</a></div><div class="repo-list">
 <a href="https://github.com/AstralDeep/AstralDeep"><strong>AstralDeep</strong><span>Agent orchestration, identity, workflows, and integrations</span><span aria-hidden="true">↗</span></a>
