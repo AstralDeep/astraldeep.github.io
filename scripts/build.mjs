@@ -1,5 +1,6 @@
 // Builds only the public site allowlist and safely embeds the generated board in static HTML.
 import { cp, mkdir, readFile, writeFile } from 'node:fs/promises';
+import { createHash } from 'node:crypto';
 import { summarize } from './model.mjs';
 
 const config = JSON.parse(await readFile('data/config.json', 'utf8'));
@@ -13,8 +14,14 @@ catch (error) {
 await mkdir('_site/data', { recursive: true });
 await cp('site', '_site', { recursive: true });
 const safeJSON = JSON.stringify({ ...board, repositories: config.repositories, coordinator: config.coordinator }).replaceAll('<', '\\u003c');
+const assetVersions = new Map();
+for (const filename of ['styles.css', 'theme.js', 'app.js']) {
+  const digest = createHash('sha256').update(await readFile(`site/${filename}`)).digest('hex').slice(0, 12);
+  assetVersions.set(filename, `${filename}?v=${digest}`);
+}
 for (const filename of ['index.html', 'bounties.html', 'leaderboard.html', 'contribute.html']) {
-  const html = await readFile(`site/${filename}`, 'utf8');
+  let html = await readFile(`site/${filename}`, 'utf8');
+  for (const [asset, versioned] of assetVersions) html = html.replaceAll(`="${asset}"`, `="${versioned}"`);
   await writeFile(`_site/${filename}`, html.replace('<!-- BOARD_DATA -->', `<script type="application/json" id="board-data">${safeJSON}</script>`));
 }
 await writeFile('_site/data/board.json', `${JSON.stringify(board, null, 2)}\n`);

@@ -30,6 +30,7 @@ test('build excludes internal drafts, safely embeds data, and fails deployment w
       assert.equal((text.match(/<h1>/g) || []).length, 1);
       assert.ok(text.includes('Skip to content'));
       assert.ok(text.includes('Content-Security-Policy'));
+      for (const asset of ['styles.css', 'theme.js', 'app.js']) assert.ok(new RegExp(`="${asset.replace('.', '\\.')}\\?v=[a-f0-9]{12}"`).test(text));
       const urls = [...text.matchAll(/(?:href|src)="([^"#?]+)(?:[?#][^"]*)?"/g)].map(match => match[1]).filter(url => !url.startsWith('http'));
       for (const url of urls) assert.ok((await readFile(join(root, '_site', url))).length > 0, `${page}: ${url}`);
     }
