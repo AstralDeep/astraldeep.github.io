@@ -85,5 +85,59 @@
     "reason": "",
     "createdAt": "2026-10-02T09:58:33.093Z",
     "expiresAt": "2026-10-09T09:58:33.093Z"
+  },
+  "comment:AstralDeep/AstralPrimitives:5958675746": {
+    "source": {
+      "repository": "AstralDeep/AstralPrimitives",
+      "issue": 9,
+      "comment": 5958675746,
+      "receipt": 5958678921,
+      "command": "claim",
+      "commandAt": "2026-10-02T18:23:42Z"
+    },
+    "userId": 227824523,
+    "login": "makar52nn2016-jpg",
+    "userNodeId": "U_kgDODZRTiw",
+    "key": "AstralDeep/AstralPrimitives#9",
+    "status": "active",
+    "reason": "",
+    "createdAt": "2026-10-02T20:48:48.866Z",
+    "expiresAt": "2026-10-09T20:48:48.866Z"
+  },
+  "comment:AstralDeep/AstralProjection:5958676111": {
+    "source": {
+      "repository": "AstralDeep/AstralProjection",
+      "issue": 37,
+      "comment": 5958676111,
+      "receipt": 5958679010,
+      "command": "claim",
+      "commandAt": "2026-10-02T18:23:44Z"
+    },
+    "userId": 227824523,
+    "login": "makar52nn2016-jpg",
+    "userNodeId": "U_kgDODZRTiw",
+    "key": "AstralDeep/AstralProjection#37",
+    "status": "rejected",
+    "reason": "Finish or release your existing bounty first.",
+    "createdAt": "2026-10-02T20:48:48.866Z",
+    "expiresAt": "2026-10-09T20:48:48.866Z"
+  },
+  "comment:AstralDeep/AstralPrimitives:5958802644": {
+    "source": {
+      "repository": "AstralDeep/AstralPrimitives",
+      "issue": 10,
+      "comment": 5958802644,
+      "receipt": 5958805034,
+      "command": "claim",
+      "commandAt": "2026-10-02T18:31:48Z"
+    },
+    "userId": 229870107,
+    "login": "s6pa1rta3n-lab",
+    "userNodeId": "U_kgDODbOKGw",
+    "key": "AstralDeep/AstralPrimitives#10",
+    "status": "active",
+    "reason": "",
+    "createdAt": "2026-10-02T20:48:48.866Z",
+    "expiresAt": "2026-10-09T20:48:48.866Z"
   }
 }
