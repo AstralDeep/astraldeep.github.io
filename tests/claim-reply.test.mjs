@@ -21,8 +21,8 @@ function fixture() {
   const github = { rest: {
     repos: {
       get: async () => ({ data: state.metadata }),
-      getCommit: async () => ({ data: { sha: 'a'.repeat(40) } }),
-      getContent: async args => ({ data: { type: 'file', encoding: 'base64', content: Buffer.from(JSON.stringify(args.path.endsWith('claim-protocol.json') ? state.activation : state.claims)).toString('base64') } }),
+      getCommit: async args => { state.calls.push(['state-head', args]); return { data: { sha: 'a'.repeat(40) } }; },
+      getContent: async args => { state.calls.push(['state-file', args]); return { data: { type: 'file', encoding: 'base64', content: Buffer.from(JSON.stringify(args.path.endsWith('claim-protocol.json') ? state.activation : state.claims)).toString('base64') } }; },
     },
     issues: {
       getComment: async args => { state.calls.push(['comment', args]); return { data: state.comment }; },
@@ -58,6 +58,13 @@ function reserve(f, changes = {}) {
 
 function reply(f) { return f.state.comments.find(item => p.trustedBot(item.user)); }
 function status(result) { return result.results?.[0]?.status ?? result.status; }
+
+test('source receipts use the durable state branch and one immutable snapshot', async () => {
+  const f = fixture(); await f.run();
+  assert.ok(f.state.calls.filter(([kind]) => kind === 'state-head').every(([, args]) => args.ref === 'community-state'));
+  assert.equal(f.state.calls.filter(([kind]) => kind === 'state-file').length, 2);
+  assert.ok(f.state.calls.filter(([kind]) => kind === 'state-file').every(([, args]) => args.ref === 'a'.repeat(40)));
+});
 
 test('ownership uses the provider assigner rather than an actor naming the assignee', async () => {
   const f = fixture(); reserve(f); await f.run();

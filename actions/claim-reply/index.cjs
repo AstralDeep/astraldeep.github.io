@@ -16,7 +16,8 @@ async function pages(method, args) {
 
 async function readState(github) {
   const [owner, repo] = config.coordinator.split('/');
-  const { data: head } = await github.rest.repos.getCommit({ owner, repo, ref: 'main' });
+  if (config.stateBranch !== 'community-state') throw new Error('Invalid coordinator state branch');
+  const { data: head } = await github.rest.repos.getCommit({ owner, repo, ref: config.stateBranch });
   if (!/^[a-f0-9]{40}$/.test(head.sha)) throw new Error('Invalid coordinator head');
   async function read(path) {
     const { data } = await github.rest.repos.getContent({ owner, repo, path, ref: head.sha });
