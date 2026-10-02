@@ -16,12 +16,15 @@ async function pages(method, args) {
 
 async function readState(github) {
   const [owner, repo] = config.coordinator.split('/');
-  const { data: head } = await github.rest.repos.getCommit({ owner, repo, ref: 'main' });
+  if (config.stateBranch !== 'community-state') throw new Error('Invalid coordinator state branch');
+  const { data: head } = await github.rest.repos.getCommit({ owner, repo, ref: config.stateBranch });
   if (!/^[a-f0-9]{40}$/.test(head.sha)) throw new Error('Invalid coordinator head');
   async function read(path) {
     const { data } = await github.rest.repos.getContent({ owner, repo, path, ref: head.sha });
-    if (data.type !== 'file' || data.encoding !== 'base64' || typeof data.content !== 'string' || data.content.length > 2000000) throw new Error('Invalid coordinator state file');
-    return JSON.parse(Buffer.from(data.content, 'base64').toString('utf8'));
+    if (data.type !== 'file' || data.encoding !== 'base64' || typeof data.content !== 'string' || data.content.length > 1400000) throw new Error('Invalid coordinator state file');
+    const content = Buffer.from(data.content, 'base64');
+    if (content.length > 1000000) throw new Error('Invalid coordinator state size');
+    return JSON.parse(content.toString('utf8'));
   }
   const activation = p.protocol(await read('state/claim-protocol.json'));
   const claims = await read('state/claims.json');
