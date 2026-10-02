@@ -29,5 +29,15 @@
     "points": 100,
     "review": 5384763604,
     "awardedAt": "2026-10-01T20:02:30Z"
+  },
+  {
+    "issue": "https://github.com/AstralDeep/LETS/issues/72",
+    "pr": "https://github.com/AstralDeep/LETS/pull/83",
+    "userId": 213264585,
+    "login": "Tanayqq",
+    "points": 400,
+    "review": 5388148255,
+    "awardedAt": "2026-10-02T03:51:34Z",
+    "reason": "Owner-approved historical missed-claim correction; accepted source request and final-head independent approval, without backdating a reservation."
   }
 ]
