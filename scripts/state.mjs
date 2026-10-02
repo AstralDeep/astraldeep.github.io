@@ -14,7 +14,7 @@ function sha(value) {
 function validate(files) {
   if (!files || Object.keys(files).sort().join('\n') !== [...statePaths].sort().join('\n')) throw new Error('Invalid community state file set');
   for (const content of Object.values(files)) {
-    if (typeof content !== 'string' || Buffer.byteLength(content) > 2000000) throw new Error('Invalid community state content');
+    if (typeof content !== 'string' || Buffer.byteLength(content) > 1000000) throw new Error('Invalid community state content');
     JSON.parse(content);
   }
 }
@@ -34,7 +34,7 @@ export async function readState(api, config) {
   const files = {};
   for (const name of statePaths) {
     const file = await api.request(`${path}/contents/${name}?ref=${commit}`);
-    if (file.type !== 'file' || file.encoding !== 'base64' || typeof file.content !== 'string' || file.content.length > 2800000) throw new Error('Invalid community state file');
+    if (file.type !== 'file' || file.encoding !== 'base64' || typeof file.content !== 'string' || file.content.length > 1400000) throw new Error('Invalid community state file');
     files[name] = Buffer.from(file.content, 'base64').toString('utf8');
   }
   validate(files);

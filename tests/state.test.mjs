@@ -87,7 +87,7 @@ test('missing, malformed and oversized provider data or invalid identities are r
 });
 
 test('persistence rejects invalid snapshots, file sets, contents and provider commit identity', async () => {
-  for (const bad of [null, { ...files, 'extra.json': '{}' }, { ...files, 'state/claims.json': 7 }, { ...files, 'state/claims.json': 'invalid' }]) {
+  for (const bad of [null, { ...files, 'extra.json': '{}' }, { ...files, 'state/claims.json': 7 }, { ...files, 'state/claims.json': 'invalid' }, { ...files, 'state/claims.json': JSON.stringify('x'.repeat(1000000)) }]) {
     const f = fixture(); const snapshot = await readState(f.api, config);
     await assert.rejects(persistState(f.api, config, snapshot, bad));
     assert.ok(f.state.calls.every(call => call.method === 'GET'));
