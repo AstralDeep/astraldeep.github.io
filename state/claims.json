@@ -1,0 +1,53 @@
+{
+  "2": {
+    "request": 2,
+    "userId": 16158892,
+    "login": "armstrongsam25",
+    "key": "AstralDeep/AstralPlane#20",
+    "status": "finished",
+    "reason": "",
+    "createdAt": "2026-10-01T13:18:44.936Z",
+    "expiresAt": "2026-10-08T13:18:44.936Z",
+    "userNodeId": "MDQ6VXNlcjE2MTU4ODky",
+    "endedAt": "2026-10-01T15:07:22.666Z"
+  },
+  "comment:AstralDeep/AstralPrimitives:5934293206": {
+    "source": {
+      "repository": "AstralDeep/AstralPrimitives",
+      "issue": 14,
+      "comment": 5934293206,
+      "receipt": 5934297534,
+      "command": "claim",
+      "commandAt": "2026-10-01T15:10:16Z"
+    },
+    "userId": 16158892,
+    "login": "armstrongsam25",
+    "userNodeId": "MDQ6VXNlcjE2MTU4ODky",
+    "key": "AstralDeep/AstralPrimitives#14",
+    "status": "released",
+    "reason": "",
+    "createdAt": "2026-10-01T15:10:28.849Z",
+    "expiresAt": "2026-10-08T15:10:28.849Z",
+    "endedAt": "2026-10-01T15:17:50.274Z",
+    "releasedBy": "comment:AstralDeep/AstralPrimitives:5934433598"
+  },
+  "comment:AstralDeep/AstralPrimitives:5934433598": {
+    "source": {
+      "repository": "AstralDeep/AstralPrimitives",
+      "issue": 14,
+      "comment": 5934433598,
+      "receipt": 5934438028,
+      "command": "unclaim",
+      "commandAt": "2026-10-01T15:17:34Z"
+    },
+    "userId": 16158892,
+    "login": "armstrongsam25",
+    "key": "AstralDeep/AstralPrimitives#14",
+    "status": "released",
+    "cancellationValid": true,
+    "reason": "",
+    "createdAt": "2026-10-01T15:17:50.274Z",
+    "endedAt": "2026-10-01T15:17:50.274Z",
+    "userNodeId": "MDQ6VXNlcjE2MTU4ODky"
+  }
+}
