@@ -49,5 +49,41 @@
     "createdAt": "2026-10-01T15:17:50.274Z",
     "endedAt": "2026-10-01T15:17:50.274Z",
     "userNodeId": "MDQ6VXNlcjE2MTU4ODky"
+  },
+  "comment:AstralDeep/LETS:5946089917": {
+    "source": {
+      "repository": "AstralDeep/LETS",
+      "issue": 71,
+      "comment": 5946089917,
+      "receipt": 5946091353,
+      "command": "claim",
+      "commandAt": "2026-10-02T05:22:45Z"
+    },
+    "userId": 213264585,
+    "login": "Tanayqq",
+    "userNodeId": "U_kgDODLYoyQ",
+    "key": "AstralDeep/LETS#71",
+    "status": "rejected",
+    "reason": "The source issue is assigned to another contributor.",
+    "createdAt": "2026-10-02T09:58:33.093Z",
+    "expiresAt": "2026-10-09T09:58:33.093Z"
+  },
+  "comment:AstralDeep/AstralPlane:5946133207": {
+    "source": {
+      "repository": "AstralDeep/AstralPlane",
+      "issue": 22,
+      "comment": 5946133207,
+      "receipt": 5946134825,
+      "command": "claim",
+      "commandAt": "2026-10-02T05:27:26Z"
+    },
+    "userId": 213264585,
+    "login": "Tanayqq",
+    "userNodeId": "U_kgDODLYoyQ",
+    "key": "AstralDeep/AstralPlane#22",
+    "status": "active",
+    "reason": "",
+    "createdAt": "2026-10-02T09:58:33.093Z",
+    "expiresAt": "2026-10-09T09:58:33.093Z"
   }
 }
