@@ -1,7 +1,9 @@
 // Verifies data-only state hydration, immutable reads, and durable fast-forward publication under failures and races.
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readFile } from 'node:fs/promises';
+import { readFile, writeFile, mkdtemp, cp, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { readState, persistState, statePaths } from '../scripts/state.mjs';
 
@@ -108,4 +110,42 @@ test('workflow saves before notifications and publication, executes main code an
     const result = spawnSync(process.execPath, ['scripts/state-cli.mjs', ...args], { encoding: 'utf8', env: { ...process.env, GITHUB_REPOSITORY: config.coordinator, GITHUB_REF: 'refs/heads/untrusted' } });
     assert.notEqual(result.status, 0); assert.match(result.stderr, /require coordinator main/);
   }
+});
+
+
+test('local sync reads live ledgers without mutating them and missing state never falls back', async () => {
+  const directory = await mkdtemp(join(tmpdir(), 'astral-live-sync-'));
+  try {
+    for (const path of ['scripts', 'data', 'state', 'actions']) await cp(path, join(directory, path), { recursive: true });
+    const historic = 'invalid historical snapshot';
+    await writeFile(join(directory, 'state/claims.json'), historic);
+    const bootstrap = join(directory, 'provider.mjs');
+    await writeFile(bootstrap, `import { readFile } from 'node:fs/promises';
+const files = {'state/claims.json':'{}','state/claim-protocol.json':'{"version":1,"enabledAt":null}','data/awards.json':'[]'};
+globalThis.fetch = async (url, options) => {
+  if (options.method !== 'GET') throw new Error('Unexpected provider write');
+  let data;
+  if (url.includes('/git/ref/heads/community-state')) {
+    if (process.env.TASK_STATE_MISSING === 'true') return new Response('{}', {status:404});
+    data = {object:{sha:'a'.repeat(40)}};
+  } else if (url.includes('/git/commits/')) data = {tree:{sha:'b'.repeat(40)}};
+  else if (url.includes('/git/trees/')) data = {truncated:false,tree:Object.keys(files).map(path=>({path,type:'blob',mode:'100644'}))};
+  else if (url.includes('/contents/')) {
+    const path = url.split('/contents/')[1].split('?')[0];
+    data = {type:'file',encoding:'base64',content:Buffer.from(files[path]).toString('base64')};
+  } else if (url.includes('/issues?')) data = [];
+  else if (/\\/repos\\/[^/]+\\/[^/?]+$/.test(url)) data = {private:false,archived:false,has_issues:true};
+  else throw new Error('Unexpected provider route '+url);
+  return new Response(JSON.stringify(data),{status:200});
+};
+`);
+    const run = (missing = false, args = []) => spawnSync(process.execPath, ['--import', bootstrap, 'scripts/run.mjs', ...args], { cwd: directory, encoding: 'utf8', env: { ...process.env, TASK_STATE_MISSING: String(missing), GITHUB_REF: 'refs/heads/untrusted', GITHUB_REPOSITORY: config.coordinator } });
+    const success = run(); assert.equal(success.status, 0, success.stderr);
+    const board = await readFile(join(directory, '.cache/board.json'), 'utf8');
+    assert.equal(JSON.parse(board).tasks.length, 0);
+    assert.equal(await readFile(join(directory, 'state/claims.json'), 'utf8'), historic);
+    const missing = run(true); assert.notEqual(missing.status, 0); assert.match(missing.stderr, /returned 404/);
+    assert.equal(await readFile(join(directory, '.cache/board.json'), 'utf8'), board);
+    const denied = run(false, ['--persist-claims']); assert.notEqual(denied.status, 0); assert.match(denied.stderr, /require the coordinator main branch/);
+  } finally { await rm(directory, {recursive:true,force:true}); }
 });
