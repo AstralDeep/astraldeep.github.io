@@ -177,7 +177,8 @@
     "cancellationValid": true,
     "reason": "",
     "createdAt": "2026-10-03T14:49:57.569Z",
-    "endedAt": "2026-10-03T14:49:57.569Z"
+    "endedAt": "2026-10-03T14:49:57.569Z",
+    "userNodeId": "U_kgDOBs37rg"
   },
   "comment:AstralDeep/AstralProjection:5969977444": {
     "source": {
@@ -192,9 +193,64 @@
     "login": "xiasan1992",
     "userNodeId": "U_kgDOBs37rg",
     "key": "AstralDeep/AstralProjection#37",
-    "status": "active",
+    "status": "released",
     "reason": "",
     "createdAt": "2026-10-03T14:49:57.569Z",
-    "expiresAt": "2026-10-10T14:49:57.569Z"
+    "expiresAt": "2026-10-10T14:49:57.569Z",
+    "endedAt": "2026-10-03T18:27:51.496Z",
+    "releasedBy": "comment:AstralDeep/AstralProjection:5970837247"
+  },
+  "comment:AstralDeep/AstralProjection:5970518696": {
+    "source": {
+      "repository": "AstralDeep/AstralProjection",
+      "issue": 37,
+      "comment": 5970518696,
+      "receipt": 5970519836,
+      "command": "claim",
+      "commandAt": "2026-10-03T15:20:40Z"
+    },
+    "userId": 114162606,
+    "login": "xiasan1992",
+    "key": "AstralDeep/AstralProjection#37",
+    "status": "duplicate",
+    "reservation": "comment:AstralDeep/AstralProjection:5969977444",
+    "reason": "Your existing reservation remains unchanged.",
+    "createdAt": "2026-10-03T18:27:51.496Z"
+  },
+  "comment:AstralDeep/LETS:5970794274": {
+    "source": {
+      "repository": "AstralDeep/LETS",
+      "issue": 70,
+      "comment": 5970794274,
+      "receipt": 5970795588,
+      "command": "claim",
+      "commandAt": "2026-10-03T15:54:20Z"
+    },
+    "userId": 297949549,
+    "login": "werldl517-cyber",
+    "userNodeId": "U_kgDOEcJZbQ",
+    "key": "AstralDeep/LETS#70",
+    "status": "active",
+    "reason": "",
+    "createdAt": "2026-10-03T18:27:51.496Z",
+    "expiresAt": "2026-10-10T18:27:51.496Z"
+  },
+  "comment:AstralDeep/AstralProjection:5970837247": {
+    "source": {
+      "repository": "AstralDeep/AstralProjection",
+      "issue": 37,
+      "comment": 5970837247,
+      "receipt": 5970838431,
+      "command": "unclaim",
+      "commandAt": "2026-10-03T15:59:52Z"
+    },
+    "userId": 114162606,
+    "login": "xiasan1992",
+    "key": "AstralDeep/AstralProjection#37",
+    "status": "released",
+    "cancellationValid": true,
+    "reason": "",
+    "createdAt": "2026-10-03T18:27:51.496Z",
+    "endedAt": "2026-10-03T18:27:51.496Z"
   }
 }
