@@ -215,7 +215,8 @@
     "status": "duplicate",
     "reservation": "comment:AstralDeep/AstralProjection:5969977444",
     "reason": "Your existing reservation remains unchanged.",
-    "createdAt": "2026-10-03T18:27:51.496Z"
+    "createdAt": "2026-10-03T18:27:51.496Z",
+    "userNodeId": "U_kgDOBs37rg"
   },
   "comment:AstralDeep/LETS:5970794274": {
     "source": {
@@ -251,6 +252,25 @@
     "cancellationValid": true,
     "reason": "",
     "createdAt": "2026-10-03T18:27:51.496Z",
-    "endedAt": "2026-10-03T18:27:51.496Z"
+    "endedAt": "2026-10-03T18:27:51.496Z",
+    "userNodeId": "U_kgDOBs37rg"
+  },
+  "comment:AstralDeep/AstralPrimitives:5970854238": {
+    "source": {
+      "repository": "AstralDeep/AstralPrimitives",
+      "issue": 14,
+      "comment": 5970854238,
+      "receipt": 5970855591,
+      "command": "claim",
+      "commandAt": "2026-10-03T16:01:59Z"
+    },
+    "userId": 114162606,
+    "login": "xiasan1992",
+    "userNodeId": "U_kgDOBs37rg",
+    "key": "AstralDeep/AstralPrimitives#14",
+    "status": "active",
+    "reason": "",
+    "createdAt": "2026-10-03T21:42:39.940Z",
+    "expiresAt": "2026-10-10T21:42:39.940Z"
   }
 }
