@@ -79,6 +79,7 @@ function safe(value) {
 }
 
 async function processPr({ github, args, metadata, pr, dryRun }) {
+  if (pr.user.id === REVIEWER.id) return { number: pr.number, status: 'owner-excluded' };
   if (pr.state !== 'open' || pr.base.ref !== 'main' || pr.base.repo.id !== metadata.id || !pr.head.repo || !/^[a-f0-9]{40}$/.test(pr.head.sha)) return { number: pr.number, status: 'ineligible' };
   const files = await pages(github.rest.pulls.listFiles, { ...args, pull_number: pr.number });
   if (files.length !== pr.changed_files) throw new Error('Incomplete PR file inventory');

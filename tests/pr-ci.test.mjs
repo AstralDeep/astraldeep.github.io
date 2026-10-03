@@ -77,9 +77,69 @@ test('drafts suppress readiness but still report failure; becoming ready is reco
   assert.equal(f.state.comments.length, 2);
 });
 
-test('self-authored PR never requests an impossible self review', async () => {
+test('owner-authored PR receives no CI notification or review request', async () => {
   const f = fixture(); f.state.pr.user = { id: 16158892, login: 'armstrongsam25' };
-  await f.run(); assert.deepEqual(f.state.writes.map(item => item[0]), ['comment']);
+  const result = await f.run();
+  assert.deepEqual(result.results, [{ number: 7, status: 'owner-excluded' }]);
+  assert.deepEqual(result.errors, []); assert.deepEqual(f.state.writes, []);
+});
+
+for (const repo of ['AstralDeep', 'AstralPlane', 'AstralPrimitives', 'AstralProjection', 'LETS']) {
+  for (const eventName of ['workflow_run', 'schedule', 'workflow_dispatch']) {
+    test(`${repo} ${eventName} excludes the owner before reading CI or comments in every PR state`, async () => {
+      for (const scenario of ['failure', 'success', 'draft', 'pending']) {
+        const f = fixture(repo); f.context.eventName = eventName;
+        f.context.payload.workflow_run = { event: 'pull_request' };
+        f.state.pr.user = { id: 16158892, login: 'armstrongsam25' };
+        if (repo === 'AstralProjection') f.state.runs.push(f.makeRun(2, '.github/workflows/android-ci.yml'), f.makeRun(3, '.github/workflows/apple-ci.yml'));
+        if (scenario === 'failure') f.state.runs[0].conclusion = 'failure';
+        if (scenario === 'draft') f.state.pr.draft = true;
+        if (scenario === 'pending') { f.state.runs[0].status = 'queued'; f.state.runs[0].conclusion = null; }
+        const unexpected = [];
+        for (const [group, methods] of [['repos', ['getContent']], ['pulls', ['listFiles', 'listReviews', 'requestReviewers']], ['actions', ['listWorkflowRunsForRepo', 'listJobsForWorkflowRun']], ['issues', ['listComments', 'createComment', 'updateComment']], ['users', ['getByUsername']]]) {
+          for (const method of methods) f.github.rest[group][method] = async () => { unexpected.push(`${group}.${method}`); throw new Error('Owner PR must not be processed'); };
+        }
+        const result = await f.run();
+        assert.deepEqual(result.results, [{ number: 7, status: 'owner-excluded' }], scenario);
+        assert.deepEqual(result.errors, [], scenario); assert.deepEqual(unexpected, [], scenario); assert.deepEqual(f.state.writes, [], scenario);
+        assert.equal(f.state.getCount, 1, scenario);
+      }
+    });
+  }
+}
+
+test('owner exclusion leaves prior failure and review receipts unchanged on later runs', async () => {
+  const f = fixture(); f.state.pr.user = { id: 16158892, login: 'armstrongsam25' };
+  f.state.comments = ['failed', 'passed', 'review-pending', 'resolved'].map((status, index) => ({ id: index + 10, user: bot, body: '<!-- astral-pr-ci:v1:' + Buffer.from(JSON.stringify({ number: 7, head: sha, status })).toString('base64url') + ' -->\nExisting notification' }));
+  const original = structuredClone(f.state.comments);
+  for (const conclusion of ['failure', 'success']) {
+    f.state.runs[0].conclusion = conclusion;
+    for (const dryRun of [false, true]) {
+      assert.equal((await f.run({ dryRun })).results[0].status, 'owner-excluded');
+      assert.deepEqual(f.state.comments, original); assert.deepEqual(f.state.writes, []);
+    }
+  }
+});
+
+test('owner exclusion follows numeric identity through a rename without excluding a reused login', async () => {
+  const owner = fixture(); owner.state.pr.user = { id: 16158892, login: 'renamed-maintainer' };
+  assert.equal((await owner.run()).results[0].status, 'owner-excluded'); assert.deepEqual(owner.state.writes, []);
+  const contributor = fixture(); contributor.state.pr.user.login = 'armstrongsam25';
+  assert.equal((await contributor.run()).results[0].status, 'passed');
+  assert.deepEqual(contributor.state.writes.map(item => item[0]), ['comment', 'review', 'edit']);
+});
+
+test('an excluded owner PR does not suppress contributor notifications in the same scan', async () => {
+  const f = fixture(); const ownerPr = structuredClone(f.state.pr);
+  ownerPr.number = 8; ownerPr.user = { id: 16158892, login: 'armstrongsam25' };
+  f.github.rest.pulls.list = async () => ({ data: [ownerPr, f.state.pr] });
+  const get = f.github.rest.pulls.get;
+  f.github.rest.pulls.get = async args => args.pull_number === 8 ? { data: structuredClone(ownerPr) } : get(args);
+  const result = await f.run();
+  assert.deepEqual(result.results.map(pr => [pr.number, pr.status]), [[8, 'owner-excluded'], [7, 'passed']]);
+  assert.deepEqual(result.errors, []);
+  assert.deepEqual(f.state.writes.map(item => item[0]), ['comment', 'review', 'edit']);
+  assert.ok(f.state.writes.every(item => (item[1].issue_number ?? item[1].pull_number ?? 7) === 7));
 });
 
 test('already requested reviewers get a mention without duplicate review requests', async () => {
