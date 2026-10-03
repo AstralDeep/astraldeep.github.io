@@ -140,5 +140,61 @@
     "createdAt": "2026-10-02T20:48:48.866Z",
     "expiresAt": "2026-10-09T20:48:48.866Z",
     "endedAt": "2026-10-03T00:03:24.762Z"
+  },
+  "comment:AstralDeep/AstralPrimitives:5969517686": {
+    "source": {
+      "repository": "AstralDeep/AstralPrimitives",
+      "issue": 7,
+      "comment": 5969517686,
+      "receipt": 5969518851,
+      "command": "claim",
+      "commandAt": "2026-10-03T13:14:55Z"
+    },
+    "userId": 114162606,
+    "login": "xiasan1992",
+    "userNodeId": "U_kgDOBs37rg",
+    "key": "AstralDeep/AstralPrimitives#7",
+    "status": "released",
+    "reason": "",
+    "createdAt": "2026-10-03T14:49:57.569Z",
+    "expiresAt": "2026-10-10T14:49:57.569Z",
+    "endedAt": "2026-10-03T14:49:57.569Z",
+    "releasedBy": "comment:AstralDeep/AstralPrimitives:5969660427"
+  },
+  "comment:AstralDeep/AstralPrimitives:5969660427": {
+    "source": {
+      "repository": "AstralDeep/AstralPrimitives",
+      "issue": 7,
+      "comment": 5969660427,
+      "receipt": 5969662186,
+      "command": "unclaim",
+      "commandAt": "2026-10-03T13:32:45Z"
+    },
+    "userId": 114162606,
+    "login": "xiasan1992",
+    "key": "AstralDeep/AstralPrimitives#7",
+    "status": "released",
+    "cancellationValid": true,
+    "reason": "",
+    "createdAt": "2026-10-03T14:49:57.569Z",
+    "endedAt": "2026-10-03T14:49:57.569Z"
+  },
+  "comment:AstralDeep/AstralProjection:5969977444": {
+    "source": {
+      "repository": "AstralDeep/AstralProjection",
+      "issue": 37,
+      "comment": 5969977444,
+      "receipt": 5969979009,
+      "command": "claim",
+      "commandAt": "2026-10-03T14:13:04Z"
+    },
+    "userId": 114162606,
+    "login": "xiasan1992",
+    "userNodeId": "U_kgDOBs37rg",
+    "key": "AstralDeep/AstralProjection#37",
+    "status": "active",
+    "reason": "",
+    "createdAt": "2026-10-03T14:49:57.569Z",
+    "expiresAt": "2026-10-10T14:49:57.569Z"
   }
 }
