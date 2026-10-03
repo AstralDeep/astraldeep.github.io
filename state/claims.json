@@ -135,9 +135,10 @@
     "login": "s6pa1rta3n-lab",
     "userNodeId": "U_kgDODbOKGw",
     "key": "AstralDeep/AstralPrimitives#10",
-    "status": "active",
+    "status": "finished",
     "reason": "",
     "createdAt": "2026-10-02T20:48:48.866Z",
-    "expiresAt": "2026-10-09T20:48:48.866Z"
+    "expiresAt": "2026-10-09T20:48:48.866Z",
+    "endedAt": "2026-10-03T00:03:24.762Z"
   }
 }
