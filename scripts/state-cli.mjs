@@ -1,4 +1,4 @@
-// Hydrates or persists the three community ledgers while executable code stays on the trusted main branch.
+// Hydrates the award ledger and archived history from one snapshot while code stays on trusted main.
 import { readFile, writeFile, mkdir } from 'node:fs/promises';
 import { GitHub } from './github.mjs';
 import { readState, persistState, statePaths } from './state.mjs';

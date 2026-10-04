@@ -19,7 +19,6 @@ jobs:
     timeout-minutes: 15
     permissions:
       contents: write
-      issues: write
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
@@ -33,16 +32,12 @@ jobs:
         run: node scripts/state-cli.mjs load
         env:
           GITHUB_TOKEN: ${{ github.token }}
-      - name: Reconcile public bounties and exclusive claims
-        run: node scripts/run.mjs --persist-claims
+      - name: Reconcile public bounties and verified main merges
+        run: node scripts/run.mjs --persist-awards
         env:
           GITHUB_TOKEN: ${{ github.token }}
-      - name: Persist claim decisions before acknowledging them
+      - name: Persist verified points before publication
         run: node scripts/state-cli.mjs save
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
-      - name: Acknowledge claim requests
-        run: node scripts/notify.mjs
         env:
           GITHUB_TOKEN: ${{ github.token }}
       - run: npm run build

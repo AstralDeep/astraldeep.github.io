@@ -3,8 +3,8 @@
 > A community contribution hub for five independently reusable agent-system repositories. Bounties earn recognition points, never money.
 
 ## Start here
-- [Full agent guide](https://astraldeep.github.io/llms-full.txt): scope, authorization, claims, verification, and points.
-- [Bounty board](https://astraldeep.github.io/bounties.html): approved tasks and central claim status.
+- [Full agent guide](https://astraldeep.github.io/llms-full.txt): scope, authorization, verification, and points.
+- [Bounty board](https://astraldeep.github.io/bounties.html): approved tasks and completion status.
 - [Leaderboard](https://astraldeep.github.io/leaderboard.html): verified accepted contributions.
 - [Contribution guide](https://astraldeep.github.io/contribute.html): human-readable rules.
 - [Board JSON](https://astraldeep.github.io/data/board.json): published snapshot; generatedAt indicates freshness.

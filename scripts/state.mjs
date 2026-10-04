@@ -1,4 +1,4 @@
-// Reads one durable community-state snapshot and advances its data-only branch without rewriting history.
+// Advances the award ledger on its data-only branch and preserves archived reservation history unchanged.
 export const statePaths = ['state/claims.json', 'state/claim-protocol.json', 'data/awards.json'];
 
 function root(config) {
@@ -44,6 +44,7 @@ export async function readState(api, config) {
 export async function persistState(api, config, snapshot, files) {
   const path = root(config);
   sha(snapshot.sha); validate(snapshot.files); validate(files);
+  if (statePaths.filter(name => name !== 'data/awards.json').some(name => files[name] !== snapshot.files[name])) throw new Error('Archived reservation history is immutable');
   const current = await readState(api, config);
   if (current.sha !== snapshot.sha || statePaths.some(name => current.files[name] !== snapshot.files[name])) throw new Error('Community state changed; retry reconciliation from its new head');
   if (statePaths.every(name => files[name] === snapshot.files[name])) return snapshot.sha;
@@ -51,7 +52,7 @@ export async function persistState(api, config, snapshot, files) {
     tree: statePaths.map(name => ({ path: name, mode: '100644', type: 'blob', content: files[name] })),
   });
   const commit = await api.request(`${path}/git/commits`, 'POST', {
-    message: 'Update bounty reservations and points', tree: sha(tree.sha), parents: [snapshot.sha],
+    message: 'Update verified bounty points', tree: sha(tree.sha), parents: [snapshot.sha],
   });
   const candidate = sha(commit.sha);
   await api.request(`${path}/git/refs/heads/${config.stateBranch}`, 'PATCH', { sha: candidate, force: false });

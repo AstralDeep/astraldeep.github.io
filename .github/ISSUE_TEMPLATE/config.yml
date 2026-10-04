@@ -2,4 +2,4 @@ blank_issues_enabled: false
 contact_links:
   - name: Contribution guide
     url: https://astraldeep.github.io/contribute.html
-    about: Claims, point awards, security reporting, and agent-assisted contributions.
+    about: Point awards, security reporting, and agent-assisted contributions.

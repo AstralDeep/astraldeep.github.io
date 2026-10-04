@@ -4,6 +4,7 @@ import assert from 'node:assert/strict';
 import { readFile, writeFile, mkdtemp, cp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { pathToFileURL } from 'node:url';
 import { spawnSync } from 'node:child_process';
 import { readState, persistState, statePaths } from '../scripts/state.mjs';
 
@@ -29,7 +30,7 @@ function fixture() {
       if (state.race) throw new Error('Non-fast-forward update rejected');
       state.head = candidate; state.files = state.pending;
       if (state.ambiguous) throw new Error('Response lost');
-      if (state.corrupt) state.files[statePaths[0]] = '{}';
+      if (state.corrupt) state.files['data/awards.json'] = '[]';
       return {};
     }
     throw new Error(`Unexpected request ${path}`);
@@ -41,7 +42,7 @@ test('hydrates all ledgers from one captured commit and advances only a data-onl
   const f = fixture(); const snapshot = await readState(f.api, config);
   assert.deepEqual(snapshot, { sha: first, files });
   assert.ok(f.state.calls.filter(call => call.path.includes('/contents/')).every(call => call.path.endsWith(`?ref=${first}`)));
-  const next = { ...files, 'state/claims.json': '{"new":true}\n' };
+  const next = { ...files, 'data/awards.json': '[{"new":true}]\n' };
   assert.equal(await persistState(f.api, config, snapshot, next), candidate);
   const tree = f.state.calls.find(call => call.method === 'POST' && call.path.endsWith('/git/trees')).body;
   assert.deepEqual(Object.keys(tree), ['tree']);
@@ -57,6 +58,14 @@ test('no-op persistence verifies current data without writes', async () => {
   assert.ok(f.state.calls.every(call => call.method === 'GET'));
 });
 
+test('archived reservation and activation bytes cannot be changed by award persistence', async () => {
+  for (const name of statePaths.filter(path => path !== 'data/awards.json')) {
+    const f = fixture(); const snapshot = await readState(f.api, config);
+    await assert.rejects(persistState(f.api, config, snapshot, { ...files, [name]: '{"changed":true}' }), /immutable/);
+    assert.ok(f.state.calls.every(call => call.method === 'GET'));
+  }
+});
+
 test('stale snapshots and changed bytes stop before writing', async () => {
   for (const change of [state => { state.head = 'd'.repeat(40); }, state => { state.files[statePaths[0]] = '{"changed":true}'; }]) {
     const f = fixture(); const snapshot = await readState(f.api, config); change(f.state);
@@ -68,7 +77,7 @@ test('stale snapshots and changed bytes stop before writing', async () => {
 test('rejected and ambiguous writes fail closed and an applied write recovers from fresh data', async () => {
   for (const condition of ['race', 'ambiguous', 'corrupt']) {
     const f = fixture(); const snapshot = await readState(f.api, config); f.state[condition] = true;
-    await assert.rejects(persistState(f.api, config, snapshot, { ...files, 'state/claims.json': '{"saved":true}' }));
+    await assert.rejects(persistState(f.api, config, snapshot, { ...files, 'data/awards.json': '[{"saved":true}]' }));
     if (condition === 'ambiguous') {
       f.state.ambiguous = false;
       const recovered = await readState(f.api, config);
@@ -95,17 +104,18 @@ test('persistence rejects invalid snapshots, file sets, contents and provider co
     assert.ok(f.state.calls.every(call => call.method === 'GET'));
   }
   const f = fixture(); const snapshot = await readState(f.api, config); f.state.candidate = 'bad';
-  await assert.rejects(persistState(f.api, config, snapshot, { ...files, 'state/claims.json': '{"next":true}' }), /commit/);
+  await assert.rejects(persistState(f.api, config, snapshot, { ...files, 'data/awards.json': '[{"next":true}]' }), /commit/);
   assert.ok(!f.state.calls.some(call => call.method === 'PATCH'));
 });
 
-test('workflow saves before notifications and publication, executes main code and never pushes main', async () => {
+test('workflow saves before publication, executes main code and never pushes main', async () => {
   const workflow = await readFile('.github/workflows/pages.yml', 'utf8');
   assert.match(workflow, /if: github.ref == 'refs\/heads\/main'/);
   assert.match(workflow, /ref: main\n\s+persist-credentials: false/);
-  const commands = ['npm run check && npm test', 'node scripts/state-cli.mjs load', 'node scripts/run.mjs --persist-claims', 'node scripts/state-cli.mjs save', 'node scripts/notify.mjs', 'npm run build'];
+  const commands = ['npm run check && npm test', 'node scripts/state-cli.mjs load', 'node scripts/run.mjs --persist-awards', 'node scripts/state-cli.mjs save', 'npm run build'];
   for (let i = 1; i < commands.length; i++) assert.ok(workflow.indexOf(commands[i - 1]) < workflow.indexOf(commands[i]));
   assert.doesNotMatch(workflow, /continue-on-error|git push|ref: community-state/);
+  assert.doesNotMatch(workflow, /issues: write|notify\.mjs|persist-claims/);
   for (const args of [[], ['load'], ['save'], ['other']]) {
     const result = spawnSync(process.execPath, ['scripts/state-cli.mjs', ...args], { encoding: 'utf8', env: { ...process.env, GITHUB_REPOSITORY: config.coordinator, GITHUB_REF: 'refs/heads/untrusted' } });
     assert.notEqual(result.status, 0); assert.match(result.stderr, /require coordinator main/);
@@ -116,7 +126,7 @@ test('workflow saves before notifications and publication, executes main code an
 test('local sync reads live ledgers without mutating them and missing state never falls back', async () => {
   const directory = await mkdtemp(join(tmpdir(), 'astral-live-sync-'));
   try {
-    for (const path of ['scripts', 'data', 'state', 'actions']) await cp(path, join(directory, path), { recursive: true });
+    for (const path of ['scripts', 'data', 'state']) await cp(path, join(directory, path), { recursive: true });
     const historic = 'invalid historical snapshot';
     await writeFile(join(directory, 'state/claims.json'), historic);
     const bootstrap = join(directory, 'provider.mjs');
@@ -139,13 +149,14 @@ globalThis.fetch = async (url, options) => {
   return new Response(JSON.stringify(data),{status:200});
 };
 `);
-    const run = (missing = false, args = []) => spawnSync(process.execPath, ['--import', bootstrap, 'scripts/run.mjs', ...args], { cwd: directory, encoding: 'utf8', env: { ...process.env, TASK_STATE_MISSING: String(missing), GITHUB_REF: 'refs/heads/untrusted', GITHUB_REPOSITORY: config.coordinator } });
+    const run = (missing = false, args = []) => spawnSync(process.execPath, ['--import', pathToFileURL(bootstrap).href, 'scripts/run.mjs', ...args], { cwd: directory, encoding: 'utf8', env: { ...process.env, TASK_STATE_MISSING: String(missing), GITHUB_REF: 'refs/heads/untrusted', GITHUB_REPOSITORY: config.coordinator } });
     const success = run(); assert.equal(success.status, 0, success.stderr);
     const board = await readFile(join(directory, '.cache/board.json'), 'utf8');
     assert.equal(JSON.parse(board).tasks.length, 0);
     assert.equal(await readFile(join(directory, 'state/claims.json'), 'utf8'), historic);
     const missing = run(true); assert.notEqual(missing.status, 0); assert.match(missing.stderr, /returned 404/);
     assert.equal(await readFile(join(directory, '.cache/board.json'), 'utf8'), board);
-    const denied = run(false, ['--persist-claims']); assert.notEqual(denied.status, 0); assert.match(denied.stderr, /require the coordinator main branch/);
+    const denied = run(false, ['--persist-awards']); assert.notEqual(denied.status, 0); assert.match(denied.stderr, /require the coordinator main branch/);
+    const retired = run(false, ['--persist-claims']); assert.notEqual(retired.status, 0); assert.match(retired.stderr, /Expected optional --persist-awards/);
   } finally { await rm(directory, {recursive:true,force:true}); }
 });

@@ -51,7 +51,6 @@ Better primitive rendering, client parity, and independent examples can make the
 A place to contribute
 
 The bounty board turns these goals into tasks across five repositories.
-Choose a task, request a claim, and wait for your reservation before starting.
 Accepted, reviewed work earns recognition points on the leaderboard.
 Join us at astraldeep.github.io.
 
