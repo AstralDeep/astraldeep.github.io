@@ -11,5 +11,6 @@
 @media(max-width:1000px){.brand-wordmark{width:178px}.site-header nav{gap:18px}.site-header{gap:18px}.theme-toggle{margin-left:auto}}
 @media(max-width:700px){.site-header{display:grid;grid-template-columns:1fr auto;gap:17px}.site-header nav{grid-row:2;grid-column:1/-1;gap:18px;justify-content:space-between;width:100%}.site-header nav a{font-size:.78rem}.theme-toggle{grid-column:2;grid-row:1}.brand-wordmark{width:182px}.hero h1{font-size:3.25rem}}
 @media(max-width:700px){.site-header nav{gap:8px;flex-wrap:nowrap}.site-header nav a{font-size:.73rem;white-space:nowrap}}
+@media(max-width:360px){.site-header nav{flex-wrap:wrap}}
 
 .ecosystem-film{margin:0;width:100%;min-width:0}.story-video{display:block;width:100%;aspect-ratio:16/9;background:#0f1221;border:1px solid var(--line);border-radius:10px}.story-video::cue{font-family:"Open Sans","Segoe UI",sans-serif;font-size:14px;color:#f3f4f6;background:rgba(15,18,33,.92);line-height:1.4}.ecosystem-film figcaption{margin-top:16px;color:var(--muted);font-size:.8rem;line-height:1.65}.ecosystem-film figcaption strong{display:block;color:var(--ink);font-size:.95rem;font-weight:600;margin-bottom:4px}.ecosystem-film figcaption span{display:block}@media(max-width:700px){.ecosystem-film{margin-top:30px}.story-video::cue{font-size:12px}}
