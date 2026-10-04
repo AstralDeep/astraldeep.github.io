@@ -143,14 +143,13 @@
     {
       "title": "A place to contribute",
       "lines": [
-        "Request a task reservation",
+        "Choose an approved task",
         "Ship a reviewed contribution",
         "Earn recognition points",
         "astraldeep.github.io"
       ],
       "narration": [
         "The bounty board turns these goals into tasks across five repositories.",
-        "Choose a task, request a claim, and wait for your reservation before starting.",
         "Accepted, reviewed work earns recognition points on the leaderboard.",
         "Join us at astral deep dot github dot I O."
       ],
@@ -161,9 +160,9 @@
     }
   ],
   "visual_revision": {
-    "duration": 141.63491666666667,
-    "narration_preserved": true,
-    "captions_preserved": true,
+    "duration": 137.05,
+    "narration_preserved": false,
+    "captions_preserved": false,
     "states": [
       {
         "chapter": 1,
@@ -420,30 +419,29 @@
       {
         "chapter": 9,
         "start": 129.460916667,
-        "title": "A reservation comes before the work",
-        "description": "The central claim workflow reserves the task before implementation starts.",
-        "frame": "29.png",
-        "end": 134.103583333,
-        "duration": 4.642666665999997
-      },
-      {
-        "chapter": 9,
-        "start": 134.103583333,
         "title": "Reviewed work earns recognition",
-        "description": "Awards require accepted completed work and independent review under the board rules. No invented contributor scores appear.",
+        "description": "A successful main merge that closes an approved bounty credits the PR author. No invented contributor scores appear.",
         "frame": "30.png",
-        "end": 137.999583333,
+        "end": 133.356916667,
         "duration": 3.896000000000015
       },
       {
         "chapter": 9,
-        "start": 137.999583333,
+        "start": 133.356916667,
         "title": "Help move the project forward",
         "description": "The site is the entry point for public point bounties.",
         "frame": "31.png",
-        "end": 141.63491666666667,
+        "end": 136.99225000066667,
         "duration": 3.635333333666665
       }
-    ]
+    ],
+    "edit": {
+      "removed_original_segment": {
+        "start": 129.460916667,
+        "end": 134.103583333
+      },
+      "reason": "Retired task reservation guidance; retained narration and adjusted caption timing elsewhere.",
+      "original_slides": "astraldeep-introduction-slides.pptx"
+    }
   }
 }

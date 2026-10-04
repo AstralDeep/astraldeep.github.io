@@ -4,8 +4,7 @@
   "stateBranch": "community-state",
   "repositories": ["AstralDeep/AstralDeep", "AstralDeep/AstralProjection", "AstralDeep/AstralPlane", "AstralDeep/AstralPrimitives", "AstralDeep/LETS"],
   "points": [25, 50, 100, 200, 400],
-  "claimHours": 168,
   "bountyLabel": "bounty",
-  "awardApprovers": [{ "id": 16158892, "login": "armstrongsam25" }],
+  "historicalAwardApprovers": [{ "id": 16158892, "login": "armstrongsam25" }],
   "tracks": ["interoperability", "voice", "security", "reusability"]
 }

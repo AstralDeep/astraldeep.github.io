@@ -5,10 +5,10 @@
   "type": "module",
   "engines": { "node": ">=22" },
   "scripts": {
-    "test": "node --test --experimental-test-coverage --test-coverage-lines=90 --test-coverage-include=scripts/state.mjs --test-coverage-include=scripts/awards.mjs --test-coverage-include=scripts/model.mjs --test-coverage-include=scripts/github.mjs --test-coverage-include=scripts/sync.mjs --test-coverage-include=scripts/source-claims.mjs --test-coverage-include=actions/claim-reply/*.cjs --test-coverage-include=actions/pr-ci/*.cjs tests/*.test.mjs",
+    "test": "node --test --experimental-test-coverage --test-coverage-lines=90 --test-coverage-include=scripts/state.mjs --test-coverage-include=scripts/awards.mjs --test-coverage-include=scripts/model.mjs --test-coverage-include=scripts/github.mjs --test-coverage-include=scripts/sync.mjs --test-coverage-include=actions/pr-ci/*.cjs tests/*.test.mjs",
     "build": "node scripts/build.mjs",
     "build:preview": "node scripts/build.mjs --preview",
     "sync": "node scripts/run.mjs",
-    "check": "node --check site/app.js && node --check site/theme.js && node --check scripts/state.mjs && node --check scripts/state-cli.mjs && node --check scripts/run.mjs && node --check scripts/build.mjs && node --check scripts/notify.mjs && node --check actions/claim-reply/index.cjs && node --check actions/pr-ci/index.cjs"
+    "check": "node --check site/app.js && node --check site/theme.js && node --check scripts/state.mjs && node --check scripts/state-cli.mjs && node --check scripts/run.mjs && node --check scripts/build.mjs && node --check scripts/model.mjs && node --check scripts/awards.mjs && node --check scripts/sync.mjs && node --check actions/pr-ci/index.cjs"
   }
 }

@@ -1,113 +1,96 @@
-// Exercises automatic merge credit, historical claim eligibility and idempotent evidence persistence without network access.
+// Exercises automatic main-merge credit, immutable historical evidence, and failure-safe reconciliation without network access.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { mergedAward, reconcileAwards } from '../scripts/awards.mjs';
 import { synchronize } from '../scripts/sync.mjs';
 import { GitHub } from '../scripts/github.mjs';
-import { reconcileClaims } from '../scripts/model.mjs';
 
 const config = JSON.parse(readFileSync('data/config.json', 'utf8'));
 const repository = 'AstralDeep/AstralPlane';
-const author = { ...config.awardApprovers[0], type: 'User' };
+const author = { id: 1234, login: 'contributor', type: 'User' };
+const merger = { id: 5678, login: 'other-maintainer', type: 'User' };
 const task = { key: `${repository}#20`, repository, number: 20, url: `https://github.com/${repository}/issues/20`, points: 50, state: 'closed', stateReason: 'completed' };
-const pr = { html_url: `https://github.com/${repository}/pull/25`, user: author, merged_by: author, created_at: '2026-10-01T13:00:00Z', merged_at: '2026-10-10T14:00:00Z', head: { sha: 'a'.repeat(40) }, merge_commit_sha: 'b'.repeat(40) };
+const pr = { html_url: `https://github.com/${repository}/pull/25`, user: author, merged_by: merger, created_at: '2026-10-01T13:00:00Z', merged_at: '2026-10-10T14:00:00Z', base: { ref: 'main', repo: { full_name: repository } }, head: { sha: 'a'.repeat(40) }, merge_commit_sha: 'b'.repeat(40) };
 const closure = { id: 'CE_example', createdAt: '2026-10-10T14:00:01Z', closer: { __typename: 'PullRequest', url: pr.html_url } };
 const now = '2026-10-10T15:00:00Z';
-const claims = { 2: { key: task.key, userId: author.id, login: author.login, status: 'expired', createdAt: '2026-10-01T12:00:00Z', expiresAt: '2026-10-08T12:00:00Z', endedAt: '2026-10-08T12:01:00Z' } };
-const assignment = { id: 123, event: 'assigned', created_at: '2026-10-01T12:30:00Z', actor: { ...author, id: 99 }, assigner: author, assignee: author };
-const credit = (p = pr, c = claims, events = [], close = closure, t = task) => mergedAward(t, p, close, c, events, config, now);
-const api = { request: async () => pr, closedBy: async () => closure, pages: async () => [] };
+const credit = (p = pr, close = closure, t = task) => mergedAward(t, p, close, now);
+const api = { request: async () => pr, closedBy: async () => closure, pages: async () => { throw new Error('New awards must not scan comments or assignments'); } };
 
-test('maintainer self-merge automatically credits a submitted claim after its lease expires', async () => {
+test('main merges automatically credit the author without claims, assignments, or configured merger', async () => {
   const award = credit();
-  assert.equal(award.points, 50); assert.equal(award.userId, author.id); assert.equal(award.mergedBy, author.id);
-  assert.deepEqual(award.claim, { type: 'reservation', id: '2', createdAt: claims[2].createdAt, expiresAt: claims[2].expiresAt });
-  assert.equal(award.closureId, closure.id); assert.equal(award.headSha, pr.head.sha);
-  const first = await reconcileAwards(api, config, [task], claims, [], now);
-  const second = await reconcileAwards(api, config, [task], claims, first.awards, '2026-10-11T00:00:00Z');
+  assert.equal(award.policy, 'main-merge'); assert.equal(award.points, 50); assert.equal(award.userId, author.id); assert.equal(award.mergedBy, merger.id);
+  assert.equal(award.baseRef, 'main'); assert.equal('claim' in award, false); assert.equal(award.closureId, closure.id); assert.equal(award.headSha, pr.head.sha);
+  const first = await reconcileAwards(api, config, [task], {}, [], now);
+  const second = await reconcileAwards(api, config, [task], { other: { status: 'active', userId: 999 } }, first.awards, '2026-10-11T00:00:00Z');
   assert.deepEqual(second, first); assert.equal(first.awards.length, 1);
-  const renamed = await reconcileAwards({ ...api, request: async () => ({ ...pr, user: { ...author, login: 'renamed' } }) }, config, [task], claims, first.awards, now);
+  assert.equal(credit({ ...pr, merged_by: author }).userId, author.id);
+  assert.equal(credit({ ...pr, user: { ...author, type: 'Bot', login: 'contributor[bot]' } }).userId, author.id);
+  const renamed = await reconcileAwards({ ...api, request: async () => ({ ...pr, user: { ...author, login: 'renamed' } }) }, config, [task], {}, first.awards, now);
   assert.equal(renamed.awards[0].login, author.login); assert.equal(renamed.verified[0].displayLogin, 'renamed');
 });
 
-test('a different contributor earns points when the configured maintainer merges', () => {
-  const other = { id: 1234, login: 'contributor', type: 'User' };
-  assert.equal(credit({ ...pr, user: other }, { 2: { ...claims[2], userId: other.id } }).userId, other.id);
-  assert.equal(credit({ ...pr, user: { ...author, id: 1234 } }), null);
-  assert.equal(credit({ ...pr, merged_by: { ...author, id: 1234 } }), null);
-  assert.equal(credit({ ...pr, merged_by: { ...author, login: 'renamed-maintainer' } }).points, 50);
+test('only same-repository completed main merges with actual PR closure evidence qualify', () => {
+  for (const close of [null, { ...closure, closer: null }, { ...closure, closer: { __typename: 'Commit', url: pr.html_url } }, { ...closure, closer: { __typename: 'PullRequest', url: pr.html_url + '0' } }]) assert.equal(credit(pr, close), null);
+  for (const change of [{ state: 'open' }, { stateReason: 'not_planned' }, { repository: 'AstralDeep/LETS' }]) assert.equal(credit(pr, closure, { ...task, ...change }), null);
+  for (const change of [{ merged_at: null }, { base: { ref: 'release', repo: { full_name: repository } } }, { base: { ref: 'main', repo: { full_name: 'contributor/AstralPlane' } } }, { base: null }]) assert.equal(credit({ ...pr, ...change }), null);
+  for (const change of [{ created_at: 'bad' }, { created_at: now }, { merged_at: now }, { head: {} }, { merge_commit_sha: 'bad' }, { merged_by: { login: merger.login } }, { user: { login: author.login } }]) assert.throws(() => credit({ ...pr, ...change }));
+  assert.throws(() => credit(pr, { ...closure, id: null }), /closure identity/);
+  assert.throws(() => credit(pr, { ...closure, createdAt: '2026-10-11T00:00:00Z' }), /dates/);
 });
 
-test('claim admission rejects invalid or late reservations while preserving eligible released history', () => {
-  for (const change of [{ key: 'wrong' }, { userId: 5 }, { status: 'rejected' }, { status: 'duplicate' }, { createdAt: pr.merged_at }, { expiresAt: pr.created_at }, { endedAt: claims[2].createdAt }, { createdAt: 'invalid' }]) assert.equal(credit(pr, { 2: { ...claims[2], ...change } }), null);
-  assert.equal(credit(pr, { 2: { ...claims[2], status: 'released', releasedBy: 'release' }, release: { source: { commandAt: '2026-10-01T12:59:00Z' } } }), null);
-  assert.ok(credit(pr, { 2: { ...claims[2], status: 'released', endedAt: '2026-10-01T14:00:00Z' } }));
-  assert.ok(credit(pr, { 2: { ...claims[2], endedAt: undefined } }));
-});
-
-test('manual assignment history qualifies only the sole human-assigned author at submission', () => {
-  const award = credit(pr, {}, [{ event: 'labeled' }, assignment]);
-  assert.deepEqual(award.claim, { type: 'assignment', eventId: 123, assignerId: author.id, userId: author.id, createdAt: assignment.created_at });
-  for (const events of [[], [{ ...assignment, assigner: { ...author, type: 'Bot' } }], [{ ...assignment, id: -1 }], [{ ...assignment, created_at: pr.merged_at }], [assignment, { ...assignment, id: 124, event: 'unassigned' }], [assignment, { ...assignment, id: 124, assignee: { id: 2, login: 'other' } }]]) assert.equal(credit(pr, {}, events), null);
-  assert.ok(credit(pr, {}, [{ ...assignment, event: 'unassigned', id: 122 }, assignment]));
-  assert.ok(credit(pr, {}, [assignment, { ...assignment, id: 124, event: 'unassigned', created_at: pr.merged_at }]));
-  assert.throws(() => credit(pr, {}, [{ ...assignment, created_at: 'bad' }]), /event time/);
-  assert.equal(credit(pr, {}, [{ ...assignment, actor: author, assigner: { id: 41898282, login: 'github-actions[bot]', type: 'Bot' } }]), null);
-  assert.equal(credit(pr, {}, [{ ...assignment, actor: author, assigner: undefined }]), null);
-});
-
-test('manual overrides and cancellation before submission take precedence over delayed reconciliation', () => {
-  const delayed = { 2: { ...claims[2], status: 'superseded', endedAt: '2026-10-01T13:05:00Z' } };
-  const intervened = '2026-10-01T12:59:00Z';
-  assert.equal(credit(pr, delayed, [{ ...assignment, created_at: intervened, assignee: { id: 99, login: 'other' } }]), null);
-  assert.equal(credit(pr, delayed, [{ ...assignment, created_at: intervened, event: 'unassigned' }]), null);
-  assert.equal(credit(pr, claims, [{ ...assignment, created_at: intervened, event: 'unassigned', assigner: { ...author, type: 'Bot' } }]).points, 50);
-  assert.equal(credit(pr, { ...claims, cancel: { key: task.key, userId: author.id, cancellationValid: true, source: { command: 'unclaim', commandAt: intervened } } }), null);
-  assert.ok(credit(pr, { ...claims, cancel: { key: task.key, userId: author.id, cancellationValid: false, source: { command: 'unclaim', commandAt: intervened } } }));
-  for (const state of ['closed', 'open']) {
-    const request = { number: 2, state, user: author, closed_at: intervened, firstClosedAt: state === 'open' ? intervened : undefined, everClosed: state === 'open' };
-    const reconciled = reconcileClaims({ 2: { ...claims[2], status: 'active' } }, [request], [{ ...task, assigneeIds: [] }], config, now);
-    assert.equal(reconciled[2].endedAt, intervened); assert.equal(credit(pr, reconciled), null);
-  }
-  const cancel = { id: 'cancel', number: 42, state: 'open', labels: ['claim-request'], user: author, target: { key: task.key }, source: { command: 'unclaim', commandAt: intervened } };
-  const reconciled = reconcileClaims(claims, [cancel], [{ ...task, assigneeIds: [] }], config, now);
-  assert.equal(reconciled.cancel.cancellationValid, true); assert.equal(credit(pr, reconciled), null);
-});
-
-test('only actual completed PR closures with verifiable timestamps and identities qualify', () => {
-  for (const close of [null, { ...closure, closer: null }, { ...closure, closer: { __typename: 'Commit', url: pr.html_url } }, { ...closure, closer: { __typename: 'PullRequest', url: pr.html_url + '0' } }]) assert.equal(credit(pr, claims, [], close), null);
-  for (const change of [{ state: 'open' }, { stateReason: 'not_planned' }, { repository: 'AstralDeep/LETS' }]) assert.equal(credit(pr, claims, [], closure, { ...task, ...change }), null);
-  assert.equal(credit({ ...pr, merged_at: null }), null); assert.equal(credit({ ...pr, user: { ...author, type: 'Bot' } }), null);
-  for (const change of [{ created_at: 'bad' }, { created_at: now }, { merged_at: now }, { head: {} }, { merge_commit_sha: 'bad' }, { merged_by: { login: author.login } }]) assert.throws(() => credit({ ...pr, ...change }));
-  assert.throws(() => credit(pr, claims, [], { ...closure, id: null }), /closure identity/);
-  assert.throws(() => credit(pr, claims, [], { ...closure, createdAt: '2026-10-11T00:00:00Z' }), /dates/);
-});
-
-test('ledger refuses changed evidence, unsupported policies and ambiguous duplicate awards', async () => {
+test('ledger refuses changed provider evidence, unsupported policies, and duplicate award scope', async () => {
   const award = credit();
-  for (const change of [{ mergedBy: 1 }, { headSha: 'c'.repeat(40) }, { claim: { type: 'reservation', id: '3' } }, { policy: 'invented' }]) await assert.rejects(reconcileAwards(api, config, [task], claims, [{ ...award, ...change }], now));
-  await assert.rejects(reconcileAwards({ ...api, closedBy: async () => null }, config, [task], claims, [award], now), /evidence changed/);
-  await assert.rejects(reconcileAwards(api, config, [task], {}, [award], now), /evidence changed/);
+  for (const change of [{ userId: 1 }, { mergedBy: 1 }, { headSha: 'c'.repeat(40) }, { mergeSha: 'c'.repeat(40) }, { baseRef: 'release' }, { closureId: 'changed' }, { policy: 'invented' }]) await assert.rejects(reconcileAwards(api, config, [task], {}, [{ ...award, ...change }], now));
+  for (const close of [null, { ...closure, closer: { __typename: 'PullRequest', url: 'https://evil.test/pull/25' } }, { ...closure, closer: { __typename: 'PullRequest', url: pr.html_url + '?x=1' } }]) {
+    assert.deepEqual((await reconcileAwards({ ...api, closedBy: async () => close }, config, [task], {}, [], now)).awards, []);
+    await assert.rejects(reconcileAwards({ ...api, closedBy: async () => close }, config, [task], {}, [award], now), /evidence changed/);
+  }
   const other = { ...task, number: 21, key: `${repository}#21`, url: task.url.replace('/20', '/21') };
-  await assert.rejects(reconcileAwards(api, config, [task, other], { ...claims, 3: { ...claims[2], key: other.key } }, [], now), /multiple eligible/);
-  for (const close of [null, { ...closure, closer: { __typename: 'PullRequest', url: 'https://evil.test/pull/25' } }, { ...closure, closer: { __typename: 'PullRequest', url: pr.html_url + '?x=1' } }]) assert.deepEqual((await reconcileAwards({ ...api, closedBy: async () => close }, config, [task], claims, [], now)).awards, []);
-  assert.deepEqual((await reconcileAwards(api, config, [task], {}, [], now)).awards, []);
+  await assert.rejects(reconcileAwards(api, config, [task, other], {}, [], now), /multiple eligible/);
+  await assert.rejects(reconcileAwards({ ...api, request: async () => { throw new Error('Provider unavailable'); } }, config, [task], {}, [], now), /Provider unavailable/);
 });
 
-test('sync persists automatic awards together with finished claims for the public board', async () => {
-  const source = { number: 20, title: 'Task', labels: ['bounty', 'points:50'], assignees: [], state: 'closed', state_reason: 'completed' };
-  const live = { ...api, request: async path => path.includes('/pulls/') ? pr : { has_issues: true }, pages: async path => path === `/repos/${repository}/issues?state=all&labels=bounty` ? [source] : [] };
+test('historical reservation awards preserve recorded bytes and require original immutable evidence', async () => {
+  const previous = { ...config.historicalAwardApprovers[0], type: 'User' };
+  const oldPR = { ...pr, user: previous, merged_by: previous };
+  const claim = { type: 'reservation', id: '2', createdAt: '2026-10-01T12:00:00Z', expiresAt: '2026-10-08T12:00:00Z' };
+  const record = { key: task.key, userId: previous.id, createdAt: claim.createdAt, expiresAt: claim.expiresAt };
+  const { baseRef, ...merge } = credit(oldPR);
+  const saved = { ...merge, policy: 'maintainer-merge', claim };
+  const bytes = JSON.stringify(saved);
+  const historicalApi = { ...api, request: async () => oldPR };
+  const result = await reconcileAwards(historicalApi, config, [task], { 2: record }, [saved], now);
+  assert.equal(JSON.stringify(result.awards[0]), bytes); assert.equal(JSON.stringify(saved), bytes);
+  for (const change of [{ key: 'other' }, { userId: 1 }, { createdAt: 'bad' }, { expiresAt: 'bad' }]) await assert.rejects(reconcileAwards(historicalApi, config, [task], { 2: { ...record, ...change } }, [saved], now), /reservation evidence/);
+  await assert.rejects(reconcileAwards(historicalApi, config, [task], {}, [saved], now), /reservation evidence/);
+  await assert.rejects(reconcileAwards(historicalApi, config, [task], { 2: record }, [{ ...saved, claim: null }], now), /claim evidence/);
+  await assert.rejects(reconcileAwards(historicalApi, { ...config, historicalAwardApprovers: [] }, [task], { 2: record }, [saved], now), /Historical award merger/);
+});
+
+test('historical assignment awards verify the bound human assignment event', async () => {
+  const previous = { ...config.historicalAwardApprovers[0], type: 'User' };
+  const oldPR = { ...pr, merged_by: previous };
+  const event = { id: 123, event: 'assigned', assigner: previous, assignee: author, created_at: '2026-10-01T12:00:00Z' };
+  const { baseRef, ...merge } = credit(oldPR);
+  const saved = { ...merge, policy: 'maintainer-merge', claim: { type: 'assignment', eventId: 123, assignerId: previous.id, userId: author.id, createdAt: event.created_at } };
+  const historicalApi = { ...api, request: async () => oldPR, pages: async () => [event] };
+  assert.deepEqual((await reconcileAwards(historicalApi, config, [task], {}, [saved], now)).awards, [saved]);
+  for (const events of [[], [{ ...event, event: 'unassigned' }], [{ ...event, assigner: { ...previous, type: 'Bot' } }], [{ ...event, assignee: { ...author, id: 99 } }], [{ ...event, created_at: now }]]) await assert.rejects(reconcileAwards({ ...historicalApi, pages: async () => events }, config, [task], {}, [saved], now), /assignment evidence/);
+});
+
+test('sync ignores reservation history and assignments and automatically credits completed bounties', async () => {
+  const source = { number: 20, title: 'Task', labels: ['bounty', 'points:50'], assignees: [{ id: 999, login: 'other' }], state: 'closed', state_reason: 'completed' };
+  const calls = [];
+  const live = { ...api, request: async path => path.includes('/pulls/') ? pr : { has_issues: true }, pages: async path => {
+    calls.push(path); if (!path.endsWith('/issues?state=all&labels=bounty')) throw new Error('Unexpected source scan');
+    return path.startsWith(`/repos/${repository}/`) ? [source] : [];
+  } };
+  const claims = { rejected: { key: task.key, userId: author.id, status: 'rejected' }, competing: { key: task.key, userId: 999, status: 'active' } };
+  const original = structuredClone(claims);
   const result = await synchronize(live, config, claims, [], now);
   assert.equal(result.awards.length, 1); assert.equal(result.board.leaderboard[0].points, 50); assert.equal(result.board.tasks[0].status, 'completed');
-});
-
-test('legacy close-reopen-close keeps its first terminal closure even before the next sync', async () => {
-  const source = { number: 20, title: 'Task', labels: ['bounty', 'points:50'], assignees: [], state: 'closed', state_reason: 'completed' };
-  const request = { number: 2, user: author, state: 'closed', closed_at: '2026-10-01T13:05:00Z' };
-  const live = { ...api, request: async path => path.includes('/pulls/') ? pr : { has_issues: true }, pages: async path => path === `/repos/${repository}/issues?state=all&labels=bounty` ? [source] : path === `/repos/${config.coordinator}/issues?state=all&labels=claim-request` ? [request] : path === `/repos/${config.coordinator}/issues/2/events` ? [{ event: 'closed', created_at: '2026-10-01T12:59:00Z' }, { event: 'reopened' }, { event: 'closed', created_at: request.closed_at }] : [] };
-  const result = await synchronize(live, config, { 2: { ...claims[2], status: 'active' } }, [], now);
-  assert.equal(result.claims[2].endedAt, '2026-10-01T12:59:00Z'); assert.equal(result.awards.length, 0);
+  assert.equal('claims' in result.board, false); assert.equal('claim' in result.board.tasks[0], false); assert.deepEqual(claims, original); assert.equal(calls.length, 5);
 });
 
 test('closure lookup sends a bounded read-only query and fails on missing provider evidence', async () => {

@@ -9,7 +9,7 @@ try { board = JSON.parse(await readFile('.cache/board.json', 'utf8')); }
 catch (error) {
   if (error.code !== 'ENOENT') throw error;
   if (process.env.GITHUB_ACTIONS === 'true' && !process.argv.includes('--preview')) throw new Error('A deployment requires a successful live sync');
-  board = summarize([], {}, [], new Date().toISOString());
+  board = summarize([], [], new Date().toISOString());
 }
 await mkdir('_site/data', { recursive: true });
 await cp('site', '_site', { recursive: true });

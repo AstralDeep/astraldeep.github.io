@@ -10,7 +10,7 @@ import { createHash } from 'node:crypto';
 test('build excludes internal drafts, safely embeds data, and fails deployment without a sync', async () => {
   const root = await mkdtemp(join(tmpdir(), 'astral-site-test-'));
   try {
-    for (const directory of ['scripts', 'site', 'data', 'actions']) await cp(directory, join(root, directory), { recursive: true });
+    for (const directory of ['scripts', 'site', 'data']) await cp(directory, join(root, directory), { recursive: true });
     const run = (env, args = []) => spawnSync(process.execPath, ['scripts/build.mjs', ...args], { cwd: root, encoding: 'utf8', env: { ...process.env, GITHUB_ACTIONS: 'false', ...env } });
     assert.equal(run().status, 0);
     assert.notEqual(run({ GITHUB_ACTIONS: 'true', GITHUB_EVENT_NAME: 'push' }).status, 0);
@@ -19,11 +19,16 @@ test('build excludes internal drafts, safely embeds data, and fails deployment w
     await mkdir(join(root, '.cache'));
     await writeFile(join(root, 'private-review.md'), 'Unapproved private review');
     const malicious = '</script><script>alert(1)</script>';
-    await writeFile(join(root, '.cache/board.json'), JSON.stringify({ tasks: [{ title: malicious }], claims: [], awards: [], leaderboard: [], generatedAt: '2026-10-01T00:00:00Z' }));
+    await writeFile(join(root, '.cache/board.json'), JSON.stringify({ tasks: [{ title: malicious }], awards: [], leaderboard: [], generatedAt: '2026-10-01T00:00:00Z' }));
     assert.equal(run().status, 0);
     const html = await readFile(join(root, '_site/bounties.html'), 'utf8');
     assert.equal(html.includes(malicious), false);
     assert.ok(html.includes('\\u003c/script>'));
+    assert.doesNotMatch(html, /claim-section|claim-list|value="claimed"|\/claim|\/unclaim/);
+    for (const file of ['contribute.html', 'app.js', 'llms.txt', 'llms-full.txt', 'assets/video/astraldeep-introduction-transcript.txt', 'assets/video/astraldeep-introduction.en.vtt']) {
+      assert.doesNotMatch(await readFile(join(root, '_site', file), 'utf8'), /\/claim|\/unclaim|Claim on GitHub|request a claim|wait for your reservation/);
+    }
+    assert.match(await readFile(join(root, '_site/contribute.html'), 'utf8'), /successfully merge it into main/);
     const published = await readdir(join(root, '_site'));
     assert.deepEqual(published.sort(), ['.nojekyll', 'app.js', 'assets', 'bounties.html', 'contribute.html', 'data', 'index.html', 'leaderboard.html', 'llms-full.txt', 'llms.txt', 'robots.txt', 'sitemap.xml', 'styles.css', 'theme.js'].sort());
     for (const page of ['index.html', 'bounties.html', 'leaderboard.html', 'contribute.html']) {
