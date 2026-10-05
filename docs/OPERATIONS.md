@@ -42,6 +42,35 @@ Review readiness requires successful current-head PR-event runs from all applica
 
 Non-draft successful PRs request review from the ID-verified `armstrongsam25`. If a review is already pending, a new-head success receipt tags him instead. One success notification is sent per head SHA; repeated completion and recovery events stay silent. Sam's own PRs are excluded by numeric account ID `16158892` across completion, scheduled recovery, and manual runs. The controller does not inspect their CI, create or edit their notification comments, or request reviews; existing bot receipts remain unchanged. Product CI and required checks still run normally. This notification is an invitation to review, not approval to merge. Provider errors fail the controller while allowing other open PRs to reconcile; the next recovery run retries.
 
+## PR triage
+
+The separate commit-pinned `actions/pr-triage` controller requests a real issue link or a
+concrete `Standalone:` explanation on non-draft PRs. Scheduled and manual reconciliation
+uses one trusted bot comment and `triage:needs-context`; supplying context resolves both.
+An issue number that is actually another PR does not satisfy the issue check. Missing links
+never close a PR automatically.
+
+A maintainer with current write, maintain, or admin permission can apply a reviewed closure
+by posting `/astral-triage close <40-character head SHA> <reason>` and a new paragraph with
+at least 40 characters of concrete evidence. Reasons are `no-op`,
+`unsupported-completion`, `duplicate`, and `superseded`. Review the whole current diff and
+acceptance scope first. Useful partial work should be repaired or narrowed, and duplicates
+must have no useful remaining delta. Size, age, author, AI use, missing links, failed CI, and
+conflicts alone are not closure reasons.
+
+The controller runs only from exact `refs/heads/main`, has only `issues: write` and
+`pull-requests: write`, checks out no repository code, executes no PR input, downloads no
+artifacts, and uses no secrets, OIDC, contents-write, approval, rerun, merge, or release
+authority. It re-reads the provider comment, verifies maintainer identity/permission, refuses
+edited comments and stale heads, and records the decision before closing. A head that changes
+during closure is reopened. GitHub's closure API has no atomic head precondition; provider
+rechecks and conservative reopening are compensating controls. An unverifiable close reply
+or post-close readback attempts a verified reopen and reports any remaining uncertainty.
+A command receipt is never replayed, including after manual
+reopening or an API failure; review again and post a fresh command to retry. Task issues,
+branches, and points remain unchanged. Each source's `.github/PR_TRIAGE.md` owns the review
+policy and maintainer procedure.
+
 ## Verification
 
 `npm test` uses deterministic built-in Node tests with a 90% line gate over the API, state, synchronization, award model, and PR CI notification modules. Thin CLI/file wrappers and browser behavior are covered by build checks and browser verification; this is not whole-site coverage. Product suites are separate. Tests perform no remote mutations.

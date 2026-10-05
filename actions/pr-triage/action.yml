@@ -1,0 +1,21 @@
+name: Evidence-based pull request triage
+description: Request missing issue context and apply exact-head maintainer closure decisions.
+inputs:
+  dry-run:
+    description: Preview decisions without changing pull requests or comments.
+    required: false
+    default: 'false'
+runs:
+  using: composite
+  steps:
+    - uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3
+      env:
+        ASTRAL_PR_TRIAGE_ACTION_PATH: ${{ github.action_path }}
+        ASTRAL_PR_TRIAGE_DRY_RUN: ${{ inputs.dry-run }}
+      with:
+        retries: 0
+        script: |
+          const { triage } = require(process.env.ASTRAL_PR_TRIAGE_ACTION_PATH + '/index.cjs');
+          const result = await triage({ github, context, dryRun: process.env.ASTRAL_PR_TRIAGE_DRY_RUN });
+          core.info(JSON.stringify(result));
+          if (result.errors?.length) core.setFailed('Some PR triage decisions could not be reconciled; see the per-PR errors above.');
