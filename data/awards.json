@@ -73,5 +73,39 @@
     "closureId": "CE_lADOTy5n3M8AAAABUTGq2M8AAAAHiOtSaw",
     "closedAt": "2026-10-02T20:00:40Z",
     "awardedAt": "2026-10-04T04:07:23.454Z"
+  },
+  {
+    "policy": "main-merge",
+    "issue": "https://github.com/AstralDeep/AstralPrimitives/issues/5",
+    "pr": "https://github.com/AstralDeep/AstralPrimitives/pull/27",
+    "userId": 318071242,
+    "login": "UniversalAviator420",
+    "points": 100,
+    "baseRef": "main",
+    "submittedAt": "2026-10-05T01:33:05Z",
+    "mergedBy": 16158892,
+    "headSha": "8b2ac5d0a0f390d9f45244e96981882cb3cb20b0",
+    "mergeSha": "b2fdebe1619a3e3f0b5e783d436df54ff37cac42",
+    "mergedAt": "2026-10-05T04:24:08Z",
+    "closureId": "CE_lADOSrYDq88AAAABUTGjXs8AAAAHj8RbKw",
+    "closedAt": "2026-10-05T04:24:10Z",
+    "awardedAt": "2026-10-05T07:11:49.641Z"
+  },
+  {
+    "policy": "main-merge",
+    "issue": "https://github.com/AstralDeep/LETS/issues/70",
+    "pr": "https://github.com/AstralDeep/LETS/pull/90",
+    "userId": 297949549,
+    "login": "werldl517-cyber",
+    "points": 100,
+    "baseRef": "main",
+    "submittedAt": "2026-10-04T03:54:14Z",
+    "mergedBy": 16158892,
+    "headSha": "526053e471122310ad30f273b785e0aade0ece94",
+    "mergeSha": "6ecf3b0e66cf293dc2017c5ead0c7b77be5c76d1",
+    "mergedAt": "2026-10-05T04:24:14Z",
+    "closureId": "CE_lADOTy5n3M8AAAABUTGtts8AAAAHj8RpNQ",
+    "closedAt": "2026-10-05T04:24:15Z",
+    "awardedAt": "2026-10-05T07:11:49.641Z"
   }
 ]
