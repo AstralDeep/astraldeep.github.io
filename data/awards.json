@@ -311,5 +311,39 @@
     "closureId": "CE_lADOOY4K2s8AAAABVJUrOM8AAAAHq3CMiA",
     "closedAt": "2026-10-10T12:43:39Z",
     "awardedAt": "2026-10-10T13:54:44.506Z"
+  },
+  {
+    "policy": "main-merge",
+    "issue": "https://github.com/AstralDeep/AstralDeep/issues/290",
+    "pr": "https://github.com/AstralDeep/AstralDeep/pull/363",
+    "userId": 16158892,
+    "login": "armstrongsam25",
+    "points": 100,
+    "baseRef": "main",
+    "submittedAt": "2026-10-08T22:38:20Z",
+    "mergedBy": 16158892,
+    "headSha": "61ca269ce5a24ed03f58b1c0035accca09f52a9f",
+    "mergeSha": "c3f25a57165be5ad65c036bc71eb1c66c42b14fc",
+    "mergedAt": "2026-10-10T17:47:19Z",
+    "closureId": "CE_lADORPrtwM8AAAABVJUuN88AAAAHrBFifA",
+    "closedAt": "2026-10-10T17:47:20Z",
+    "awardedAt": "2026-10-10T18:22:17.488Z"
+  },
+  {
+    "policy": "main-merge",
+    "issue": "https://github.com/AstralDeep/AstralDeep/issues/277",
+    "pr": "https://github.com/AstralDeep/AstralDeep/pull/381",
+    "userId": 16158892,
+    "login": "armstrongsam25",
+    "points": 100,
+    "baseRef": "main",
+    "submittedAt": "2026-10-10T03:47:45Z",
+    "mergedBy": 16158892,
+    "headSha": "3f9f124188055b0ac165031ae730cb76b6dde95b",
+    "mergeSha": "cb2842b0348c8a61cce5a8a38a8c75e763d87c64",
+    "mergedAt": "2026-10-10T15:03:22Z",
+    "closureId": "CE_lADORPrtwM8AAAABVJURg88AAAAHq7kUww",
+    "closedAt": "2026-10-10T15:03:23Z",
+    "awardedAt": "2026-10-10T18:22:17.488Z"
   }
 ]
