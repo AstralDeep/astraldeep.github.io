@@ -277,5 +277,22 @@
     "closureId": "CE_lADORPrtwM8AAAABUTGM8M8AAAAHn1_JYQ",
     "closedAt": "2026-10-08T01:05:33Z",
     "awardedAt": "2026-10-08T01:06:40.216Z"
+  },
+  {
+    "policy": "main-merge",
+    "issue": "https://github.com/AstralDeep/AstralPlane/issues/67",
+    "pr": "https://github.com/AstralDeep/AstralPlane/pull/78",
+    "userId": 16158892,
+    "login": "armstrongsam25",
+    "points": 100,
+    "baseRef": "main",
+    "submittedAt": "2026-10-10T00:50:52Z",
+    "mergedBy": 16158892,
+    "headSha": "655acc978fbd62bc6504b55a9f9781c78a50c568",
+    "mergeSha": "d37d8eedfe48d6cfcf0f5e2fa91150b2b1f21ed6",
+    "mergedAt": "2026-10-10T04:08:13Z",
+    "closureId": "CE_lADOOY4K2s8AAAABVJUNbs8AAAAHqoBlCA",
+    "closedAt": "2026-10-10T04:08:15Z",
+    "awardedAt": "2026-10-10T07:20:59.187Z"
   }
 ]
