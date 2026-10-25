@@ -27,7 +27,7 @@ Static page changes use the separate `Publish site pages` workflow. It retains t
 
 ## Maintenance
 
-The Downloads page reads `data/downloads.json`; `macos: null` exposes no installer link. Adding a release requires a product-authorized notarized DMG, an immutable public GitHub release, exact source pins, provider-supplied asset digests and matching checksum bytes. The build checks public availability against GitHub; it does not grant release authority or establish notarization. Offline previews omit installer links. See [download operations](docs/DOWNLOADS.md).
+The Downloads page reads `data/downloads.json`; `macos: null` exposes no installer link. Adding a release requires a product-authorized notarized Mac archive, an immutable public GitHub release, exact source pins, provider-supplied asset digests and matching checksum bytes. The build checks public availability against GitHub; it does not grant release authority or establish notarization. Offline previews omit installer links. See [download operations](docs/DOWNLOADS.md).
 
 See [operations](docs/OPERATIONS.md) for labels, the award schema, refresh and recovery. Unapproved task drafts live outside this repository and never enter Pages artifacts. Do not seed the board with invented issues or achievements.
 

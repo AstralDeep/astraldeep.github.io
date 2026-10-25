@@ -5,7 +5,7 @@ import { createHash } from 'node:crypto';
 import { renderMacDownload, validateDownloads, verifyPublishedDownload } from '../scripts/downloads.mjs';
 
 const release = () => ({
-  version: '1.8', build: 69, minimumMacOS: '14.0', architecture: 'arm64',
+  version: '1.8', build: 69, minimumMacOS: '14.0', architecture: 'arm64', format: 'dmg', channel: 'stable',
   bytes: 23456789, sha256: 'a'.repeat(64),
   url: 'https://github.com/AstralDeep/AstralDeep/releases/download/macos-v1.8-69/AstralDeep-1.8-69-arm64.dmg',
   releaseURL: 'https://github.com/AstralDeep/AstralDeep/releases/tag/macos-v1.8-69',
@@ -34,6 +34,8 @@ test('a release produces an explicit Mac download with compatibility and integri
   assert.doesNotMatch(html, /target="_blank"|onclick|<script/);
   assert.match(renderMacDownload({ ...release(), architecture: 'universal', url: release().url.replace('arm64', 'universal') }), /Apple silicon and Intel/);
   assert.match(renderMacDownload({ ...release(), architecture: 'x86_64', url: release().url.replace('arm64', 'x86_64') }), /Intel/);
+  assert.match(renderMacDownload({ ...release(), format: 'zip', url: release().url.replace('.dmg', '.zip') }), /ZIP 22\.4 MB/);
+  assert.match(renderMacDownload({ ...release(), channel: 'preview' }), /1\.8 \(69\) preview/);
 });
 
 test('download metadata rejects incomplete, cross-repository and mismatched values', () => {
@@ -42,7 +44,7 @@ test('download metadata rejects incomplete, cross-repository and mismatched valu
   }
   for (const patch of [
     { version: '1.8<script>' }, { build: 0 }, { build: 69.1 }, { minimumMacOS: '14.0"' },
-    { architecture: 'automatic' }, { bytes: 0 }, { bytes: 2.1 }, { sha256: 'b'.repeat(63) },
+    { architecture: 'automatic' }, { format: 'pkg' }, { channel: 'unknown' }, { bytes: 0 }, { bytes: 2.1 }, { sha256: 'b'.repeat(63) },
     { url: 'javascript:alert(1)' },
     { url: 'https://github.com/other/app/releases/download/macos-v1.8-69/AstralDeep-1.8-69-arm64.dmg' },
     { url: `${release().url}?download=1` }, { url: release().url.replace('69-arm64', '68-arm64') },
@@ -99,6 +101,10 @@ test('only provider-confirmed immutable public assets with matching checksum byt
   state.reference.object = { type: 'tag', sha: 'e'.repeat(40) };
   state.annotation = { object: { type: 'commit', sha: state.mac.source.deep } };
   await verifyPublishedDownload(state.mac, github, async () => new Response(state.text));
+  state.mac.channel = 'preview'; state.published.prerelease = true;
+  await verifyPublishedDownload(state.mac, github, async () => new Response(state.text));
+  state.mac.channel = 'stable';
+  await assert.rejects(verifyPublishedDownload(state.mac, github));
 });
 
 test('provider failures, drafts, mutable releases, replaced assets and checksum disagreement block activation', async () => {
