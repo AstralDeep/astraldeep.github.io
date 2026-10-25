@@ -30,12 +30,15 @@ test('build excludes internal drafts, safely embeds data, and fails deployment w
     }
     assert.match(await readFile(join(root, '_site/contribute.html'), 'utf8'), /successfully merge it into main/);
     const published = await readdir(join(root, '_site'));
-    assert.deepEqual(published.sort(), ['.nojekyll', 'app.js', 'assets', 'bounties.html', 'contribute.html', 'data', 'index.html', 'leaderboard.html', 'llms-full.txt', 'llms.txt', 'robots.txt', 'sitemap.xml', 'styles.css', 'theme.js'].sort());
-    for (const page of ['index.html', 'bounties.html', 'leaderboard.html', 'contribute.html']) {
+    assert.deepEqual(published.sort(), ['.nojekyll', 'app.js', 'assets', 'bounties.html', 'contribute.html', 'data', 'downloads.html', 'index.html', 'leaderboard.html', 'llms-full.txt', 'llms.txt', 'robots.txt', 'sitemap.xml', 'styles.css', 'theme.js'].sort());
+    assert.deepEqual(JSON.parse(await readFile(join(root, '_site/data/downloads.json'), 'utf8')), { schemaVersion: 1, macos: null });
+    assert.match(await readFile(join(root, '_site/downloads.html'), 'utf8'), /Mac download in preparation/);
+    for (const page of ['index.html', 'downloads.html', 'bounties.html', 'leaderboard.html', 'contribute.html']) {
       const text = await readFile(join(root, '_site', page), 'utf8');
       assert.equal((text.match(/<h1>/g) || []).length, 1);
       assert.ok(text.includes('Skip to content'));
       assert.ok(text.includes('Content-Security-Policy'));
+      assert.match(text, /<nav aria-label="Main navigation"><a href="downloads.html"/);
       for (const asset of ['styles.css', 'theme.js', 'app.js']) assert.ok(new RegExp(`="${asset.replace('.', '\\.')}\\?v=[a-f0-9]{12}"`).test(text));
       for (const asset of ['assets/astraldeep-icon.png', 'assets/astraldeep-wordmark.png']) {
         const digest = createHash('sha256').update(await readFile(join(root, 'site', asset))).digest('hex').slice(0, 12);
