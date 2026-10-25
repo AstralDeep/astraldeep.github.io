@@ -3,6 +3,8 @@
 > A community contribution hub for five independently reusable agent-system repositories. Bounties earn recognition points, never money.
 
 ## Start here
+- [Downloads](https://astraldeep.github.io/downloads.html): published clients and checksums.
+- [Download metadata](https://astraldeep.github.io/data/downloads.json): `macos: null` means no public Mac download is available.
 - [Full agent guide](https://astraldeep.github.io/llms-full.txt): scope, authorization, verification, and points.
 - [Bounty board](https://astraldeep.github.io/bounties.html): approved tasks and completion status.
 - [Leaderboard](https://astraldeep.github.io/leaderboard.html): verified accepted contributions.

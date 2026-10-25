@@ -4,6 +4,8 @@ Purpose: help contributors deliver reviewed work across AstralDeep, AstralProjec
 
 Priorities: standard MCP and Agent2Agent interoperability; reliable voice across clients, especially mobile; stronger security through LETS; independently usable components and documented public interfaces. A protocol compatibility claim must identify its version and retained test evidence.
 
+Client downloads: https://astraldeep.github.io/downloads.html and https://astraldeep.github.io/data/downloads.json contain only published release metadata. A null macos entry means no Mac download is available. Do not substitute App Store packages, local candidates, or unsigned files. Product release policy remains in the owning repository.
+
 Discovery: https://astraldeep.github.io/data/board.json contains generatedAt, tasks, awards, and leaderboard. This is a snapshot. Inspect the live source issue, acceptance criteria, and related pull requests before acting. A delayed build can leave stale data; more than two hours old is flagged in the UI. Do not infer availability from a stale snapshot.
 
 Contributing: choose an approved bounty and work in a branch or fork from current main. Coordinate overlapping work through ordinary issue discussion. There is no reservation or assignment prerequisite. The board refreshes automatically while open.

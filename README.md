@@ -1,6 +1,6 @@
 # AstralDeep community
 
-[Bounty board](https://astraldeep.github.io/bounties.html) · [Leaderboard](https://astraldeep.github.io/leaderboard.html) · [Contributor guide](https://astraldeep.github.io/contribute.html)
+[Downloads](https://astraldeep.github.io/downloads.html) · [Bounty board](https://astraldeep.github.io/bounties.html) · [Leaderboard](https://astraldeep.github.io/leaderboard.html) · [Contributor guide](https://astraldeep.github.io/contribute.html)
 
 An independent GitHub Pages site coordinating point bounties across AstralDeep, AstralProjection, AstralPlane, AstralPrimitives, and LETS. Its priorities are protocol interoperability, reliable cross-client voice, LETS security, and reusable components. Points recognize accepted contributions; they are not money.
 
@@ -24,6 +24,8 @@ python -m http.server 8765 --directory _site
 `npm run sync` reads the five public GitHub repositories and the live `community-state` ledgers without updating them. The main ledger copies are historical snapshots. Set `GITHUB_TOKEN` for an authenticated API rate limit when appropriate; never put it in browser code. A failed sync fails the deployment and preserves the previously published site. `npm run build:preview` permits an empty snapshot for offline CI checks. The deployment workflow uses `npm run build`, which requires a successful live sync in Actions.
 
 ## Maintenance
+
+The Downloads page reads `data/downloads.json`; `macos: null` exposes no installer link. Adding a release requires a product-authorized notarized DMG, an immutable public GitHub release, exact source pins, provider-supplied asset digests and matching checksum bytes. The build checks public availability against GitHub; it does not grant release authority or establish notarization. Offline previews omit installer links. See [download operations](docs/DOWNLOADS.md).
 
 See [operations](docs/OPERATIONS.md) for labels, the award schema, refresh and recovery. Unapproved task drafts live outside this repository and never enter Pages artifacts. Do not seed the board with invented issues or achievements.
 

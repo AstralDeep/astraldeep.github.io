@@ -4,6 +4,7 @@ This repository owns the public GitHub Pages community board, not the product UI
 Keep the five repositories in `data/config.json` explicit. Never discover or expose private repositories.
 
 - Use plain HTML, CSS, browser JavaScript, and Node.js built-ins. No runtime dependency or browser token is needed.
+- Keep Downloads prominent and concise. Link only product-authorized immutable public releases after checking provider asset identities and checksum bytes; this site never signs, notarizes, or publishes client packages and never turns a private candidate into a release.
 - Read each product repository's constitution before proposing product changes. The board cannot waive their CI, authorization, privacy, or release requirements.
 - User review precedes publishing proposed bounty issues. Unapproved review drafts stay outside this public repository and every Pages artifact.
 - GitHub source issues own task content and published bounty points. The data-only `community-state` branch owns the award ledger; main holds historical snapshots. Execute only protected main code, load history from one immutable state commit, and verify a fast-forward state write before Pages publication.
