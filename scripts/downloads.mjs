@@ -11,13 +11,14 @@ export function validateDownloads(manifest) {
   if (!keys(manifest, ['schemaVersion', 'macos']) || manifest.schemaVersion !== 1) throw new Error('Invalid download manifest');
   const mac = manifest.macos;
   if (mac === null) return manifest;
-  if (!keys(mac, ['version', 'build', 'minimumMacOS', 'architecture', 'bytes', 'sha256', 'url', 'releaseURL', 'checksumsURL', 'source'])
+  if (!keys(mac, ['version', 'build', 'minimumMacOS', 'architecture', 'format', 'channel', 'bytes', 'sha256', 'url', 'releaseURL', 'checksumsURL', 'source'])
     || !version(mac.version) || !version(mac.minimumMacOS) || !Number.isSafeInteger(mac.build) || mac.build < 1
-    || !Object.hasOwn(architectures, mac.architecture) || !Number.isSafeInteger(mac.bytes) || mac.bytes < 1 || mac.bytes > 2147483648
+    || !Object.hasOwn(architectures, mac.architecture) || !['dmg', 'zip'].includes(mac.format) || !['stable', 'preview'].includes(mac.channel)
+    || !Number.isSafeInteger(mac.bytes) || mac.bytes < 1 || mac.bytes > 2147483648
     || !hex(mac.sha256, 64)) throw new Error('Invalid Mac release identity');
   const root = 'https://github.com/AstralDeep/AstralDeep/releases';
   const tag = `macos-v${mac.version}-${mac.build}`;
-  const filename = `AstralDeep-${mac.version}-${mac.build}-${mac.architecture}.dmg`;
+  const filename = `AstralDeep-${mac.version}-${mac.build}-${mac.architecture}.${mac.format}`;
   if (mac.url !== `${root}/download/${tag}/${filename}` || mac.releaseURL !== `${root}/tag/${tag}`
     || mac.checksumsURL !== `${root}/download/${tag}/SHA256SUMS`) throw new Error('Mac release links disagree');
   if (!keys(mac.source, ['deep', 'projection']) || !hex(mac.source.deep, 40) || !hex(mac.source.projection, 40)) throw new Error('Mac release source is not pinned');
@@ -27,9 +28,9 @@ export function validateDownloads(manifest) {
 export function renderMacDownload(release) {
   const mac = validateDownloads({ schemaVersion: 1, macos: release }).macos;
   if (mac === null) return '<p class="download-status" role="status">Mac download in preparation</p>';
-  return `<p class="download-version">${mac.version} (${mac.build})</p>
+  return `<p class="download-version">${mac.version} (${mac.build})${mac.channel === 'preview' ? ' preview' : ''}</p>
 <p class="download-compatibility">${architectures[mac.architecture]}<br>macOS ${mac.minimumMacOS} or later</p>
-<a class="button primary download-action" href="${mac.url}">Download for Mac <span class="download-size">${(mac.bytes / 1048576).toFixed(1)} MB</span></a>
+<a class="button primary download-action" id="download-macos" href="${mac.url}">Download for Mac <span class="download-size">${mac.format.toUpperCase()} ${(mac.bytes / 1048576).toFixed(1)} MB</span></a>
 <div class="download-links"><a href="${mac.releaseURL}">Release notes</a><a href="${mac.checksumsURL}">Checksums</a></div>
 <details class="download-integrity"><summary>SHA-256</summary><code>${mac.sha256}</code></details>`;
 }
@@ -39,7 +40,7 @@ export async function verifyPublishedDownload(release, github, transport = fetch
   if (mac === null) return;
   const tag = `macos-v${mac.version}-${mac.build}`;
   const published = await github.request(`/repos/AstralDeep/AstralDeep/releases/tags/${tag}`);
-  if (!published || published.draft !== false || published.prerelease !== false || published.immutable !== true
+  if (!published || published.draft !== false || published.prerelease !== (mac.channel === 'preview') || published.immutable !== true
     || published.tag_name !== tag || published.html_url !== mac.releaseURL || !Number.isFinite(Date.parse(published.published_at))
     || !Number.isSafeInteger(published.id) || published.id < 1) throw new Error('Mac release is not published and immutable');
   const reference = await github.request(`/repos/AstralDeep/AstralDeep/git/ref/tags/${tag}`);
