@@ -21,7 +21,9 @@ npm run build
 python -m http.server 8765 --directory _site
 ```
 
-`npm run sync` reads the five public GitHub repositories and the live `community-state` ledgers without updating them. The main ledger copies are historical snapshots. Set `GITHUB_TOKEN` for an authenticated API rate limit when appropriate; never put it in browser code. A failed sync fails the deployment and preserves the previously published site. `npm run build:preview` permits an empty snapshot for offline CI checks. The deployment workflow uses `npm run build`, which requires a successful live sync in Actions.
+`npm run sync` reads the five public GitHub repositories and the live `community-state` ledgers without updating them. The main ledger copies are historical snapshots. Set `GITHUB_TOKEN` for an authenticated API rate limit when appropriate; never put it in browser code. A failed sync preserves the previously published board. `npm run build:preview` permits an empty snapshot for offline CI checks.
+
+Static page changes use the separate `Publish site pages` workflow. It retains the published board only when every award matches the immutable live ledger, its original timestamp matches the successful main Community board run, and its task data and derived totals validate. It writes no ledger state and keeps the original timestamp/stale warning. Both publishers share one concurrency group. This permits a Downloads/layout update while unavailable provider history still correctly blocks fresh award reconciliation. `npm run build` requires a verified snapshot in Actions.
 
 ## Maintenance
 
