@@ -19,4 +19,5 @@ const result = await synchronize(api, config, claims, awards, new Date().toISOSt
 await mkdir('.cache', { recursive: true });
 await writeFile('.cache/board.json', `${JSON.stringify(result.board, null, 2)}\n`);
 if (persist) await writeFile('data/awards.json', `${JSON.stringify(result.awards, null, 2)}\n`);
-console.log(`Validated ${result.board.tasks.length} tasks and ${result.awards.length} awards.`);
+for (const item of result.unawarded) console.log(`Not awarded ${item.issue} through ${item.pr}: ${item.reason}.`);
+console.log(`Validated ${result.board.tasks.length} tasks and ${result.awards.length} awards; ${result.unawarded.length} completed closures were not awarded.`);
