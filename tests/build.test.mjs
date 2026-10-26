@@ -11,6 +11,7 @@ test('build excludes internal drafts, safely embeds data, and fails deployment w
   const root = await mkdtemp(join(tmpdir(), 'astral-site-test-'));
   try {
     for (const directory of ['scripts', 'site', 'data']) await cp(directory, join(root, directory), { recursive: true });
+    await writeFile(join(root, 'data/downloads.json'), JSON.stringify({ schemaVersion: 1, macos: null }));
     const run = (env, args = []) => spawnSync(process.execPath, ['scripts/build.mjs', ...args], { cwd: root, encoding: 'utf8', env: { ...process.env, GITHUB_ACTIONS: 'false', ...env } });
     assert.equal(run().status, 0);
     assert.notEqual(run({ GITHUB_ACTIONS: 'true', GITHUB_EVENT_NAME: 'push' }).status, 0);
