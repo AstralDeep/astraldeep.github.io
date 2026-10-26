@@ -11,5 +11,5 @@ export async function synchronize(api, config, historicalClaims, awards, now) {
     tasks.push(...issues.map(issue => taskFromIssue(repository, issue, config)).filter(Boolean));
   }
   const credited = await reconcileAwards(api, config, tasks, historicalClaims, awards, now);
-  return { awards: credited.awards, board: summarize(tasks, credited.verified, now) };
+  return { awards: credited.awards, board: summarize(tasks, credited.verified, now), unawarded: credited.unawarded };
 }

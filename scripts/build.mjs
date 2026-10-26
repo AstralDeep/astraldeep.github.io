@@ -1,16 +1,20 @@
 // Builds only the public site allowlist and safely embeds the generated board in static HTML.
-import { cp, mkdir, readFile, writeFile } from 'node:fs/promises';
+// The Mac download, appcast and signed policy come from the newest verified release found by release-discovery.mjs.
+import { cp, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
 import { summarize } from './model.mjs';
-import { renderMacDownload, validateDownloads, verifyPublishedDownload } from './downloads.mjs';
+import { renderMacDownload, validateDownloads } from './downloads.mjs';
 import { checkMacUpdateFeed } from './appcast.mjs';
+import { discoverMacRelease } from './release-discovery.mjs';
 import { GitHub } from './github.mjs';
 
 const config = JSON.parse(await readFile('data/config.json', 'utf8'));
-let downloads = validateDownloads(JSON.parse(await readFile('data/downloads.json', 'utf8')));
-await checkMacUpdateFeed('site', downloads);
-if (process.argv.includes('--preview')) downloads = { schemaVersion: 1, macos: null };
-await verifyPublishedDownload(downloads.macos, new GitHub(process.env.GITHUB_TOKEN || ''));
+const floor = validateDownloads(JSON.parse(await readFile('data/downloads.json', 'utf8')));
+await checkMacUpdateFeed('site', floor);
+const release = process.argv.includes('--preview')
+  ? { record: null, appcast: null, policy: null, signature: null }
+  : await discoverMacRelease(new GitHub(process.env.GITHUB_TOKEN || ''), floor.macos);
+const downloads = { schemaVersion: 1, macos: release.record };
 let board;
 try { board = JSON.parse(await readFile('.cache/board.json', 'utf8')); }
 catch (error) {
@@ -18,6 +22,7 @@ catch (error) {
   if (process.env.GITHUB_ACTIONS === 'true' && !process.argv.includes('--preview')) throw new Error('A deployment requires a verified board snapshot');
   board = summarize([], [], new Date().toISOString());
 }
+await rm('_site', { recursive: true, force: true });
 await mkdir('_site/data', { recursive: true });
 await cp('site', '_site', { recursive: true });
 const safeJSON = JSON.stringify({ ...board, repositories: config.repositories, coordinator: config.coordinator }).replaceAll('<', '\\u003c');
@@ -42,5 +47,10 @@ for (const filename of ['index.html', 'downloads.html', 'bounties.html', 'leader
 }
 await writeFile('_site/data/board.json', `${JSON.stringify(board, null, 2)}\n`);
 await writeFile('_site/data/downloads.json', `${JSON.stringify(downloads, null, 2)}\n`);
+if (release.appcast !== null) {
+  await writeFile('_site/appcast.xml', release.appcast);
+  await writeFile('_site/data/mac-update-policy.json', release.policy);
+  await writeFile('_site/data/mac-update-policy.json.sig', release.signature);
+}
 await writeFile('_site/.nojekyll', '');
 console.log('Built public pages and data; review drafts and internal ledgers are excluded.');

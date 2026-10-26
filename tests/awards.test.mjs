@@ -2,7 +2,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { mergedAward, reconcileAwards } from '../scripts/awards.mjs';
+import { NO_RECORDED_MERGER, mergedAward, reconcileAwards } from '../scripts/awards.mjs';
 import { synchronize } from '../scripts/sync.mjs';
 import { GitHub } from '../scripts/github.mjs';
 
@@ -37,6 +37,20 @@ test('only same-repository completed main merges with actual PR closure evidence
   for (const change of [{ created_at: 'bad' }, { created_at: now }, { merged_at: now }, { head: {} }, { merge_commit_sha: 'bad' }, { merged_by: { login: merger.login } }, { user: { login: author.login } }]) assert.throws(() => credit({ ...pr, ...change }));
   assert.throws(() => credit(pr, { ...closure, id: null }), /closure identity/);
   assert.throws(() => credit(pr, { ...closure, createdAt: '2026-10-11T00:00:00Z' }), /dates/);
+});
+
+test('a bounty PR that reached main inside another merge is recorded as unawarded instead of stopping the board', async () => {
+  const implicit = { ...pr, merged_by: null };
+  assert.equal(credit(implicit), null);
+  const result = await reconcileAwards({ ...api, request: async () => implicit }, config, [task], {}, [], now);
+  assert.deepEqual(result, { awards: [], verified: [], unawarded: [{ issue: task.url, pr: pr.html_url, reason: NO_RECORDED_MERGER }] });
+  assert.match(NO_RECORDED_MERGER, /no merger/);
+  for (const change of [{ base: { ref: 'release', repo: { full_name: repository } } }, { merged_at: null }]) {
+    assert.deepEqual((await reconcileAwards({ ...api, request: async () => ({ ...implicit, ...change }) }, config, [task], {}, [], now)).unawarded, []);
+  }
+  await assert.rejects(reconcileAwards({ ...api, request: async () => implicit }, config, [task], {}, [credit()], now), /evidence changed/);
+  for (const merger of [undefined, { id: null, login: 'web-flow' }, { id: 7, login: 'not a login' }]) assert.throws(() => credit({ ...pr, merged_by: merger }), /account identity/);
+  assert.equal((await reconcileAwards(api, config, [task], {}, [], now)).unawarded.length, 0);
 });
 
 test('ledger refuses changed provider evidence, unsupported policies, and duplicate award scope', async () => {
@@ -91,6 +105,9 @@ test('sync ignores reservation history and assignments and automatically credits
   const result = await synchronize(live, config, claims, [], now);
   assert.equal(result.awards.length, 1); assert.equal(result.board.leaderboard[0].points, 50); assert.equal(result.board.tasks[0].status, 'completed');
   assert.equal('claims' in result.board, false); assert.equal('claim' in result.board.tasks[0], false); assert.deepEqual(claims, original); assert.equal(calls.length, 5);
+  assert.deepEqual(result.unawarded, []);
+  const skipped = await synchronize({ ...live, request: async path => path.includes('/pulls/') ? { ...pr, merged_by: null } : { has_issues: true } }, config, claims, [], now);
+  assert.deepEqual(skipped.awards, []); assert.equal(skipped.board.tasks[0].status, 'closed'); assert.deepEqual(skipped.unawarded.map(item => item.reason), [NO_RECORDED_MERGER]);
 });
 
 test('closure lookup sends a bounded read-only query and fails on missing provider evidence', async () => {
