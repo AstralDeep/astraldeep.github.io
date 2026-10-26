@@ -3,10 +3,12 @@ import { cp, mkdir, readFile, writeFile } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
 import { summarize } from './model.mjs';
 import { renderMacDownload, validateDownloads, verifyPublishedDownload } from './downloads.mjs';
+import { checkMacUpdateFeed } from './appcast.mjs';
 import { GitHub } from './github.mjs';
 
 const config = JSON.parse(await readFile('data/config.json', 'utf8'));
 let downloads = validateDownloads(JSON.parse(await readFile('data/downloads.json', 'utf8')));
+await checkMacUpdateFeed('site', downloads);
 if (process.argv.includes('--preview')) downloads = { schemaVersion: 1, macos: null };
 await verifyPublishedDownload(downloads.macos, new GitHub(process.env.GITHUB_TOKEN || ''));
 let board;
