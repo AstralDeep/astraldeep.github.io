@@ -4,9 +4,9 @@
 
 ## Current state
 
-`data/downloads.json` contains `macos: null`. The page shows that the Mac download is in preparation and offers no installer link. A private build or an App Store `.pkg` is not a direct-download release.
+`data/downloads.json` points to the immutable Mac 1.8 (69) preview, Apple silicon, macOS 14 or later. The public ZIP contains the Developer ID-signed, Apple-notarized, stapled app; its exact bytes and provider digests were checked after anonymous download. Open the ZIP and move AstralDeep to Applications.
 
-The Mac package under preparation is AstralDeep 1.8 (69), Apple silicon, macOS 14 or later. It uses the registered bundle identity and the DirectDownload distribution. Public availability remains subject to the product repository's protected release process. A notarized local export alone does not authorize publication.
+This first preview uses an explicit owner-approved, artifact-bound manual publication exception while the protected Mac publisher is being configured. Approval covers ZIP SHA-256 `9eecfa0e88e3425563494849aee48fb195e14bdb7fe9bea4493a722642cd79d9` and enabling immutable releases in `AstralDeep/AstralDeep` only. The release's `release-provenance.json` states its verified scope and limits. It does not claim canonical protected-publisher approval or complete computer-harness qualification, and it does not authorize another release. Future releases follow the protected product process below.
 
 ## Publish a qualified release
 
