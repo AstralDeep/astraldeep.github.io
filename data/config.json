@@ -6,5 +6,41 @@
   "points": [25, 50, 100, 200, 400],
   "bountyLabel": "bounty",
   "historicalAwardApprovers": [{ "id": 16158892, "login": "armstrongsam25" }],
+  "awardResolutions": [
+    {
+      "repository": "AstralDeep/AstralDeep",
+      "pr": 397,
+      "award": 217,
+      "declined": [218, 262, 311],
+      "points": 100,
+      "userId": 16158892,
+      "mergedBy": 16158892,
+      "headSha": "36f03377752a8ce89a21fe50ab7eb5f2d34a75fa",
+      "mergeSha": "2d55373d7efd06d1dde92f337601c3f5069c7354",
+      "closureId": "CE_lADORPrtwM8AAAABUTGRHM8AAAAHsCQSMQ",
+      "reason": "Owner decision 2026-10-27: one PR earns one award; highest-point bounty chosen, ties to the lowest issue number",
+      "approvedBy": 16158892
+    }
+  ],
+  "unavailableAwardEvidence": [
+    {
+      "key": "AstralDeep/AstralPrimitives#14",
+      "pr": "https://github.com/AstralDeep/AstralPrimitives/pull/58",
+      "userId": 85252765,
+      "points": 50,
+      "status": "evidence no longer available from the provider",
+      "reason": "Owner decision 2026-10-27: keep historical credit; provider evidence deleted",
+      "approvedBy": 16158892
+    },
+    {
+      "key": "AstralDeep/AstralPrimitives#8",
+      "pr": "https://github.com/AstralDeep/AstralPrimitives/pull/28",
+      "userId": 85252765,
+      "points": 100,
+      "status": "evidence no longer available from the provider",
+      "reason": "Owner decision 2026-10-27: keep historical credit; provider evidence deleted",
+      "approvedBy": 16158892
+    }
+  ],
   "tracks": ["interoperability", "voice", "security", "reusability"]
 }

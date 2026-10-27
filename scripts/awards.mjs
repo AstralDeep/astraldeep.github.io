@@ -1,5 +1,6 @@
 // Credits PR authors after verified main merges close approved bounties and rechecks preserved historical awards.
 import { accountId, validateAwards, verifyAwardEvidence } from './model.mjs';
+import { confirmResolution, loadCorrections, resolutionFor, unavailableFor } from './corrections.mjs';
 
 export const NO_RECORDED_MERGER = 'GitHub records no merger because the pull request reached main inside another merge';
 
@@ -34,9 +35,11 @@ async function verifyHistoricalClaim(api, task, saved, claims, config) {
 
 export async function reconcileAwards(api, config, tasks, historicalClaims, awards, now) {
   validateAwards(awards, tasks, config);
+  const corrections = loadCorrections(config);
   const ledger = structuredClone(awards);
   const verified = [];
   const unawarded = [];
+  const unavailable = [];
   for (const task of tasks.filter(task => task.state === 'closed' && task.stateReason === 'completed')) {
     const saved = awards.find(award => award.issue === task.url);
     if (saved && !saved.policy) {
@@ -44,13 +47,22 @@ export async function reconcileAwards(api, config, tasks, historicalClaims, awar
       verified.push(verifyAwardEvidence(saved, await api.request(base), await api.request(`${base}/reviews/${saved.review}`), config.historicalAwardApprovers));
       continue;
     }
+    const entry = saved && unavailableFor(corrections, task, saved);
+    if (entry) {
+      verified.push({ ...saved, displayLogin: saved.login });
+      unavailable.push({ issue: task.url, pr: saved.pr, status: entry.status, reason: entry.reason });
+      continue;
+    }
     const closure = await api.closedBy(task.repository, task.number);
+    const resolution = resolutionFor(corrections, task, closure);
     const prefix = `https://github.com/${task.repository}/pull/`;
     let candidate = null;
-    if (closure?.closer?.__typename === 'PullRequest' && closure.closer.url.startsWith(prefix) && /^[1-9]\d*$/.test(closure.closer.url.slice(prefix.length))) {
+    if (resolution && resolution.award !== task.number) unawarded.push({ issue: task.url, pr: closure.closer.url, reason: resolution.reason });
+    else if (closure?.closer?.__typename === 'PullRequest' && closure.closer.url.startsWith(prefix) && /^[1-9]\d*$/.test(closure.closer.url.slice(prefix.length))) {
       const pr = await api.request(`/repos/${task.repository}/pulls/${closure.closer.url.slice(prefix.length)}`);
       candidate = mergedAward(task, pr, closure, saved?.awardedAt || now);
       if (!candidate && pr.merged_by === null && closesTask(task, pr, closure)) unawarded.push({ issue: task.url, pr: pr.html_url, reason: NO_RECORDED_MERGER });
+      if (resolution) confirmResolution(resolution, task, candidate);
     }
     if (saved) {
       if (saved.policy === 'maintainer-merge') {
@@ -66,5 +78,5 @@ export async function reconcileAwards(api, config, tasks, historicalClaims, awar
     }
   }
   validateAwards(ledger, tasks, config);
-  return { awards: ledger, verified, unawarded };
+  return { awards: ledger, verified, unawarded, unavailable };
 }

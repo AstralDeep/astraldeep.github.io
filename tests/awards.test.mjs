@@ -43,7 +43,7 @@ test('a bounty PR that reached main inside another merge is recorded as unawarde
   const implicit = { ...pr, merged_by: null };
   assert.equal(credit(implicit), null);
   const result = await reconcileAwards({ ...api, request: async () => implicit }, config, [task], {}, [], now);
-  assert.deepEqual(result, { awards: [], verified: [], unawarded: [{ issue: task.url, pr: pr.html_url, reason: NO_RECORDED_MERGER }] });
+  assert.deepEqual(result, { awards: [], verified: [], unawarded: [{ issue: task.url, pr: pr.html_url, reason: NO_RECORDED_MERGER }], unavailable: [] });
   assert.match(NO_RECORDED_MERGER, /no merger/);
   for (const change of [{ base: { ref: 'release', repo: { full_name: repository } } }, { merged_at: null }]) {
     assert.deepEqual((await reconcileAwards({ ...api, request: async () => ({ ...implicit, ...change }) }, config, [task], {}, [], now)).unawarded, []);

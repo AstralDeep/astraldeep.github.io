@@ -14,7 +14,7 @@ The coordinator verifies GitHub's latest `ClosedEvent.closer`, the same-reposito
 
 New records use `policy: main-merge` and retain the task, PR, author and merger IDs, points, `baseRef`, submission/merge/closure/award times, head and merge SHAs, and closure identity. The workflow appends verified awards to `data/awards.json` on `community-state` before Pages publication. Retries reverify saved evidence and cannot award twice. One task and one PR earn one award; a PR closing multiple eligible bounties fails synchronization until its award scope is reviewed.
 
-Every sync revalidates recorded awards. Current display names come from the ID-verified PR author; the ledger's original login and evidence remain unchanged. Missing or changed evidence, reopened credited issues, or changed credited point labels fail deployment and preserve the previous site. Corrections require reviewed changes and an explicit reason.
+Every sync revalidates recorded awards. Current display names come from the ID-verified PR author; the ledger's original login and evidence remain unchanged. Missing or changed evidence, reopened credited issues, or changed credited point labels fail deployment and preserve the previous site. Corrections are reviewed entries in `data/config.json`, each with a reason and the approving owner's numeric ID, and the sync logs every one it applies. `awardResolutions` lets a PR that closes several eligible bounties earn only its named `award`, leaving the `declined` issues unawarded with the reason, and applies only while the PR still closes them with the recorded author, merger, head and merge SHAs, closure event and points. `unavailableAwardEvidence` keeps historical credit for a stored award whose provider evidence was deleted by skipping only that record's provider re-verification, and applies only while the ledger record's key, user ID, PR and points still match; every other record and any other change still fails.
 
 ## Preserved history and rollout
 
@@ -73,7 +73,7 @@ policy and maintainer procedure.
 
 ## Verification
 
-`npm test` uses deterministic built-in Node tests with a 90% line gate over the API, state, synchronization, award model, and PR CI notification modules. Thin CLI/file wrappers and browser behavior are covered by build checks and browser verification; this is not whole-site coverage. Product suites are separate. Tests perform no remote mutations.
+`npm test` uses deterministic built-in Node tests with a 90% line gate over the API, state, synchronization, award model, award correction, and PR CI notification modules. Thin CLI/file wrappers and browser behavior are covered by build checks and browser verification; this is not whole-site coverage. Product suites are separate. Tests perform no remote mutations.
 
 Before publishing run `npm test`, `npm run check`, `npm run build`, inspect desktop and mobile views, and inspect the generated artifact. A read-only `npm run sync` uses current `community-state` history and real public provider evidence without updating any ledger. Do not create disposable public tasks or merge test PRs without user authorization.
 
