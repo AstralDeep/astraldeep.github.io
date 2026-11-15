@@ -1,7 +1,7 @@
 // Verifies build-time Mac release discovery, its floor, bounded asset fetches, feed cross-checks and the Pages change detector.
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { generateKeyPairSync } from 'node:crypto';
+import { createHash, generateKeyPairSync } from 'node:crypto';
 import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -9,7 +9,7 @@ import { pathToFileURL } from 'node:url';
 import { spawnSync } from 'node:child_process';
 import { GitHub } from '../scripts/github.mjs';
 import { ASSET_LIMITS, discoverMacRelease, liveReleaseChange, newestMacRelease } from '../scripts/release-discovery.mjs';
-import { ReleaseWorld, appcastFor, macRecord, publicKey, signedPolicy } from './release-fixture.mjs';
+import { ReleaseWorld, addNodePack, appcastFor, macRecord, publicKey, signedPolicy } from './release-fixture.mjs';
 
 const LIVE = 'https://astraldeep.github.io/data/downloads.json';
 const floorRelease = world => world.publish('1.8', 69, { channel: 'preview', format: 'zip', feed: false }).record;
@@ -50,13 +50,13 @@ test('discovery returns the verified floor when nothing newer is published', asy
   const world = new ReleaseWorld();
   const floor = floorRelease(world);
   world.publish('1.7', 68);
-  assert.deepEqual(await discover(world, floor), { record: floor, appcast: null, policy: null, signature: null });
+  assert.deepEqual(await discover(world, floor), { record: floor, nodePack: null, appcast: null, policy: null, signature: null });
   assert.ok(world.calls.includes('https://api.github.com/repos/AstralDeep/AstralDeep/releases/tags/macos-v1.8-69'));
   assert.ok(world.calls.includes(floor.checksumsURL));
   for (const name of Object.keys(ASSET_LIMITS)) assert.deepEqual(downloadsOf(name, world), []);
 
   const empty = new ReleaseWorld();
-  assert.deepEqual(await discover(empty, null), { record: null, appcast: null, policy: null, signature: null });
+  assert.deepEqual(await discover(empty, null), { record: null, nodePack: null, appcast: null, policy: null, signature: null });
   assert.deepEqual(empty.calls, ['https://api.github.com/repos/AstralDeep/AstralDeep/releases?per_page=100&page=1']);
 
   const unlisted = new ReleaseWorld();
@@ -70,6 +70,58 @@ test('discovery returns the verified floor when nothing newer is published', asy
   renamed.publish('1.8.0', 69, { channel: 'preview', format: 'zip', feed: false });
   await assert.rejects(discover(renamed, recorded), /disagrees with the committed floor/);
   await assert.rejects(discover(world, { ...floor, url: 'https://example.com/AstralDeep.zip' }), /links disagree/);
+});
+
+test('NodePack offer is exposed only when the descriptor, manifest and provider archive identity agree', async () => {
+  const world = new ReleaseWorld();
+  const entry = world.publish('2.0.23', 96);
+  const { descriptor } = addNodePack(world, entry);
+  const found = await discover(world, null);
+  assert.deepEqual(found.nodePack, {
+    version: descriptor.version,
+    archiveURL: `https://github.com/AstralDeep/AstralDeep/releases/download/${entry.tag}/${descriptor.archive.file}`,
+    archiveSize: descriptor.archive.size,
+    archiveSha256: descriptor.archive.sha256,
+    descriptorURL: `https://github.com/AstralDeep/AstralDeep/releases/download/${entry.tag}/node-pack.json`,
+    manifestURL: `https://github.com/AstralDeep/AstralDeep/releases/download/${entry.tag}/node-pack-manifest.json`
+  });
+  assert.equal(downloadsOf('node-pack.json', world).length, 1);
+  assert.equal(downloadsOf('node-pack-manifest.json', world).length, 1);
+  assert.equal(downloadsOf(descriptor.archive.file, world).length, 0);
+
+  const invalid = async mutate => {
+    const candidate = new ReleaseWorld();
+    const published = candidate.publish('2.0.23', 96);
+    addNodePack(candidate, published);
+    await mutate(candidate, published);
+    return discover(candidate, null);
+  };
+  await assert.rejects(invalid(async (candidate, published) => {
+    const item = published.assets.find(asset => asset.name === 'node-pack.json');
+    item.digest = `sha256:${'a'.repeat(64)}`;
+    candidate.json(`/releases/${published.release.id}/assets?per_page=100&page=1`, published.assets);
+  }), /disagrees with its provider digest/);
+  await assert.rejects(invalid(async (_candidate, published) => {
+    const item = published.assets.find(asset => asset.name.startsWith('astral-node-pack-'));
+    item.digest = `sha256:${'b'.repeat(64)}`;
+    _candidate.json(`/releases/${published.release.id}/assets?per_page=100&page=1`, published.assets);
+  }), /archive disagrees with its provider asset/);
+  await assert.rejects(invalid(async (candidate, published) => {
+    published.assets = published.assets.filter(asset => asset.name !== 'node-pack-manifest.json');
+    candidate.json(`/releases/${published.release.id}/assets?per_page=100&page=1`, published.assets);
+  }), /missing or ambiguous/);
+  await assert.rejects(invalid(async (candidate, published) => {
+    const descriptor = JSON.parse(published.files['node-pack.json'].toString());
+    descriptor.format = 'unrecognized';
+    candidate.replaceAsset(published, 'node-pack.json', `${JSON.stringify(descriptor)}\n`);
+  }), /NodePack descriptor is invalid/);
+  await assert.rejects(invalid(async (candidate, published) => {
+    candidate.replaceAsset(published, 'node-pack-manifest.json', published.files['node-pack-manifest.json'].toString().replace('astral.nodepack-manifest/v1', 'unrecognized'));
+  }), /NodePack manifest digest disagrees with descriptor/);
+  await assert.rejects(invalid(async (candidate, published) => {
+    const descriptor = published.assets.find(asset => asset.name === 'node-pack.json');
+    candidate.file(descriptor.browser_download_url, 'x'.repeat(65537));
+  }), /exceeds its size limit/);
 });
 
 test('discovery refuses a record older than the floor', async () => {

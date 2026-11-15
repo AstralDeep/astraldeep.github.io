@@ -2,7 +2,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
-import { renderMacDownload, validateDownloads, verifyPublishedDownload } from '../scripts/downloads.mjs';
+import { renderMacDownload, renderNodePackDownload, validateDownloads, verifyPublishedDownload } from '../scripts/downloads.mjs';
 
 const release = () => ({
   version: '1.8', build: 69, minimumMacOS: '14.0', architecture: 'arm64', format: 'dmg', channel: 'stable',
@@ -36,6 +36,23 @@ test('a release produces an explicit Mac download with compatibility and integri
   assert.match(renderMacDownload({ ...release(), architecture: 'x86_64', url: release().url.replace('arm64', 'x86_64') }), /Intel/);
   assert.match(renderMacDownload({ ...release(), format: 'zip', url: release().url.replace('.dmg', '.zip') }), /ZIP 22\.4 MB/);
   assert.match(renderMacDownload({ ...release(), channel: 'preview' }), /1\.8 \(69\) preview/);
+});
+
+test('NodePack download remains unavailable until provider verification supplies its offer', () => {
+  const preparing = renderNodePackDownload(null);
+  assert.match(preparing, /Optional pack release in preparation/);
+  assert.doesNotMatch(preparing, /href=|Download optional/);
+  const html = renderNodePackDownload({
+    version: '3.11.18-540fc9a7-ed5ad22', archiveURL: 'https://github.com/AstralDeep/AstralDeep/releases/download/macos-v2.0.23-96/astral-node-pack-3.11.18-540fc9a7-ed5ad22-macos-arm64.tar.gz',
+    archiveSize: 146534026, archiveSha256: 'd'.repeat(64),
+    descriptorURL: 'https://github.com/AstralDeep/AstralDeep/releases/download/macos-v2.0.23-96/node-pack.json',
+    manifestURL: 'https://github.com/AstralDeep/AstralDeep/releases/download/macos-v2.0.23-96/node-pack-manifest.json'
+  });
+  assert.match(html, /Download optional Mac node and agent pack/);
+  assert.match(html, /139\.7 MB/);
+  assert.match(html, /Offer descriptor/);
+  assert.match(html, new RegExp('d'.repeat(64)));
+  assert.doesNotMatch(html, /target="_blank"|onclick|<script/);
 });
 
 test('download metadata rejects incomplete, cross-repository and mismatched values', () => {

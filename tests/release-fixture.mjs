@@ -89,6 +89,15 @@ export class ReleaseWorld {
     this.json(`/releases/${entry.release.id}/assets?per_page=100&page=1`, entry.assets);
   }
 
+  addAsset(entry, file, body, { size = Buffer.byteLength(body), digest: assetDigest = digest(body) } = {}) {
+    const url = `${ROOT}/download/${entry.tag}/${file}`;
+    entry.assets.push({ id: entry.release.id * 100 + entry.assets.length + 1, name: file, browser_download_url: url, state: 'uploaded', size, digest: assetDigest });
+    this.file(url, body);
+    entry.files[file] = Buffer.from(body);
+    this.json(`/releases/${entry.release.id}/assets?per_page=100&page=1`, entry.assets);
+    return url;
+  }
+
   serialize() {
     const routes = Object.fromEntries([...this.routes].map(([url, route]) => [url, { status: route.status, body: route.body.toString('base64') }]));
     routes[`${API}/releases?per_page=100&page=1`] = { status: 200, body: Buffer.from(JSON.stringify(this.releases)).toString('base64') };
@@ -102,4 +111,25 @@ export class ReleaseWorld {
     const route = this.routes.get(url);
     return route ? new Response(route.body, { status: route.status }) : new Response('Not Found', { status: 404 });
   }
+}
+
+export function addNodePack(world, entry) {
+  const version = '3.11.18-540fc9a7-ed5ad22';
+  const archiveBytes = Buffer.from('qualified node pack archive fixture');
+  const archive = { file: `astral-node-pack-${version}-macos-arm64.tar.gz`, size: archiveBytes.length, sha256: createHash('sha256').update(archiveBytes).digest('hex') };
+  const manifest = {
+    format: 'astral.nodepack-manifest/v1', version, platform: 'macos-arm64', installed_bytes: 461500000,
+    deep: { repository: 'AstralDeep/AstralDeep', commit: `540fc9a7${'0'.repeat(32)}` },
+    kernel: { repository: 'AstralDeep/AstralKernel', commit: `ed5ad22${'1'.repeat(33)}`, wheel: 'astralkernel.whl', mailbox: 'mailbox' },
+    components: [], requirements: [], files: []
+  };
+  const manifestBytes = Buffer.from(`${JSON.stringify(manifest)}\n`);
+  const descriptor = {
+    format: 'astral.nodepack-descriptor/v1', platform: 'macos-arm64', version, archive,
+    installed_bytes: manifest.installed_bytes, manifest_sha256: createHash('sha256').update(manifestBytes).digest('hex')
+  };
+  world.addAsset(entry, 'node-pack.json', `${JSON.stringify(descriptor)}\n`);
+  world.addAsset(entry, 'node-pack-manifest.json', manifestBytes);
+  world.addAsset(entry, archive.file, archiveBytes);
+  return { descriptor, manifest };
 }

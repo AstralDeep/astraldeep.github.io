@@ -8,7 +8,7 @@ import { spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { pathToFileURL } from 'node:url';
 import { SPARKLE_PUBLIC_KEY } from '../scripts/appcast.mjs';
-import { ReleaseWorld, appcastFor, publicKey } from './release-fixture.mjs';
+import { ReleaseWorld, addNodePack, appcastFor, publicKey } from './release-fixture.mjs';
 
 const preload = pathToFileURL(join(process.cwd(), 'tests/fetch-fixture.mjs')).href;
 const builder = (root, world) => async (env = {}, args = []) => {
@@ -86,6 +86,7 @@ test('build renders the newest verified release and writes its discovered feed f
     await assert.rejects(site('appcast.xml'), { code: 'ENOENT' });
 
     const current = world.publish('2.0.0', 71, { older: [floor] });
+    const nodePack = addNodePack(world, current).descriptor;
     const discovered = await run();
     assert.equal(discovered.status, 0, discovered.stderr);
     assert.deepEqual(JSON.parse(await site('data/downloads.json')), { schemaVersion: 1, macos: current.record });
@@ -95,6 +96,8 @@ test('build renders the newest verified release and writes its discovered feed f
     const page = (await site('downloads.html')).toString();
     assert.match(page, /2\.0\.0 \(71\)/);
     assert.ok(page.includes(`href="${current.record.url}"`));
+    assert.ok(page.includes(`href="https://github.com/AstralDeep/AstralDeep/releases/download/${current.tag}/${nodePack.archive.file}"`));
+    assert.ok(page.includes('Download optional Mac node and agent pack'));
     assert.doesNotMatch(page, /1\.8 \(69\)/);
 
     world.replaceAsset(current, 'appcast.xml', appcastFor([{ ...current.record, bytes: current.record.bytes + 1 }]));

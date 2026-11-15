@@ -35,6 +35,15 @@ export function renderMacDownload(release) {
 <details class="download-integrity"><summary>SHA-256</summary><code>${mac.sha256}</code></details>`;
 }
 
+export function renderNodePackDownload(pack) {
+  if (pack === null) return '<p class="download-status" role="status">Optional pack release in preparation</p>';
+  const size = `${(pack.archiveSize / 1048576).toFixed(1)} MB`;
+  return `<p class="download-version">${pack.version}</p>
+<a class="button primary download-action" id="download-node-pack" href="${pack.archiveURL}">Download optional Mac node and agent pack <span class="download-size">${size}</span></a>
+<div class="download-links"><a href="${pack.descriptorURL}">Offer descriptor</a><a href="${pack.manifestURL}">Pack manifest</a></div>
+<details class="download-integrity"><summary>SHA-256</summary><code>${pack.archiveSha256}</code></details>`;
+}
+
 export async function verifyPublishedDownload(release, github, transport = fetch) {
   const mac = validateDownloads({ schemaVersion: 1, macos: release }).macos;
   if (mac === null) return;

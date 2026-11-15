@@ -1,4 +1,4 @@
-// Finds the newest macos-v release of AstralDeep/AstralDeep and returns its verified Downloads record, appcast and signed policy.
+// Finds the newest macos-v release of AstralDeep/AstralDeep and returns its verified client offers, appcast and signed policy.
 // build.mjs renders what discoverMacRelease returns; release-discovery-cli.mjs uses liveReleaseChange to decide whether Pages redeploys.
 import { createHash } from 'node:crypto';
 import { validateDownloads, verifyPublishedDownload } from './downloads.mjs';
@@ -9,6 +9,11 @@ const DOWNLOAD_ROOT = 'https://github.com/AstralDeep/AstralDeep/releases/downloa
 const TAG = /^macos-v([1-9]\d*\.\d+(?:\.\d+)?)-(\d+)$/;
 const SIGNATURE_LINE = /^[A-Za-z0-9+/]{86}==\n?$/;
 export const ASSET_LIMITS = Object.freeze({ 'downloads.json': 16384, 'appcast.xml': 2097152, 'mac-update-policy.json': 4096, 'mac-update-policy.json.sig': 256 });
+const NODE_PACK_ASSET_LIMITS = Object.freeze({ 'node-pack.json': 65536, 'node-pack-manifest.json': 33554432 });
+const NODE_PACK_ARCHIVE_LIMIT = 1073741824;
+const NODE_PACK_INSTALLED_LIMIT = 4294967296;
+const NODE_PACK_FORMAT = 'astral.nodepack-descriptor/v1';
+const NODE_PACK_MANIFEST_FORMAT = 'astral.nodepack-manifest/v1';
 
 const request = { credentials: 'omit', redirect: 'follow' };
 const utf8 = (bytes, label) => {
@@ -61,11 +66,50 @@ async function releaseAsset(assets, tag, name, transport) {
   const matches = assets.filter(item => item?.name === name);
   const asset = matches[0];
   if (matches.length !== 1 || asset.state !== 'uploaded' || asset.browser_download_url !== url) throw new Error(`${label} is missing or ambiguous`);
-  if (!Number.isSafeInteger(asset.size) || asset.size < 1 || asset.size > ASSET_LIMITS[name]) throw new Error(`${label} is empty or exceeds its size limit`);
+  const limit = ASSET_LIMITS[name] ?? NODE_PACK_ASSET_LIMITS[name];
+  if (!Number.isSafeInteger(asset.size) || asset.size < 1 || asset.size > limit) throw new Error(`${label} is empty or exceeds its size limit`);
   if (!/^sha256:[a-f0-9]{64}$/.test(asset.digest ?? '')) throw new Error(`${label} has no provider digest`);
-  const bytes = await readBounded(await transport(url, { ...request, signal: AbortSignal.timeout(30000) }), ASSET_LIMITS[name], label);
+  const bytes = await readBounded(await transport(url, { ...request, signal: AbortSignal.timeout(30000) }), limit, label);
   if (bytes.length !== asset.size || `sha256:${createHash('sha256').update(bytes).digest('hex')}` !== asset.digest) throw new Error(`${label} disagrees with its provider digest`);
   return bytes;
+}
+
+const digest = value => typeof value === 'string' && /^[a-f0-9]{64}$/.test(value);
+const positiveSize = (value, limit) => Number.isSafeInteger(value) && value > 0 && value <= limit;
+const exactKeys = (value, expected) => value && !Array.isArray(value) && typeof value === 'object'
+  && Object.keys(value).length === expected.length && expected.every(key => Object.hasOwn(value, key));
+
+async function discoverNodePack(assets, tag, transport) {
+  const hasDescriptor = assets.some(asset => asset?.name === 'node-pack.json');
+  const hasManifest = assets.some(asset => asset?.name === 'node-pack-manifest.json');
+  const hasArchive = assets.some(asset => typeof asset?.name === 'string' && asset.name.startsWith('astral-node-pack-') && asset.name.endsWith('-macos-arm64.tar.gz'));
+  if (!hasDescriptor && !hasManifest && !hasArchive) return null;
+  const descriptorBytes = await releaseAsset(assets, tag, 'node-pack.json', transport);
+  const descriptor = json(utf8(descriptorBytes, 'NodePack descriptor'), 'NodePack descriptor');
+  if (!exactKeys(descriptor, ['format', 'platform', 'version', 'archive', 'installed_bytes', 'manifest_sha256'])
+    || descriptor.format !== NODE_PACK_FORMAT || descriptor.platform !== 'macos-arm64'
+    || typeof descriptor.version !== 'string' || !/^\d+\.\d+\.\d+-[a-f0-9]{8}-[a-f0-9]{7}$/.test(descriptor.version)
+    || !positiveSize(descriptor.installed_bytes, NODE_PACK_INSTALLED_LIMIT) || !digest(descriptor.manifest_sha256)
+    || !exactKeys(descriptor.archive, ['file', 'size', 'sha256'])) throw new Error('NodePack descriptor is invalid');
+  const { archive } = descriptor;
+  const expectedFile = `astral-node-pack-${descriptor.version}-macos-arm64.tar.gz`;
+  if (archive.file !== expectedFile || !positiveSize(archive.size, NODE_PACK_ARCHIVE_LIMIT) || !digest(archive.sha256)) throw new Error('NodePack archive identity is invalid');
+  const manifestBytes = await releaseAsset(assets, tag, 'node-pack-manifest.json', transport);
+  if (createHash('sha256').update(manifestBytes).digest('hex') !== descriptor.manifest_sha256) throw new Error('NodePack manifest digest disagrees with descriptor');
+  const manifest = json(utf8(manifestBytes, 'NodePack manifest'), 'NodePack manifest');
+  const versionParts = descriptor.version.split('-');
+  if (!manifest || Array.isArray(manifest) || typeof manifest !== 'object'
+    || manifest.format !== NODE_PACK_MANIFEST_FORMAT || manifest.platform !== descriptor.platform
+    || manifest.version !== descriptor.version || manifest.installed_bytes !== descriptor.installed_bytes
+    || typeof manifest.deep?.commit !== 'string' || !/^[a-f0-9]{40}$/.test(manifest.deep.commit) || !manifest.deep.commit.startsWith(versionParts[1])
+    || typeof manifest.kernel?.commit !== 'string' || !/^[a-f0-9]{40}$/.test(manifest.kernel.commit) || !manifest.kernel.commit.startsWith(versionParts[2])) throw new Error('NodePack manifest identity disagrees with descriptor');
+  const archiveURL = `${DOWNLOAD_ROOT}/${tag}/${archive.file}`;
+  const matches = assets.filter(item => item?.name === archive.file);
+  const asset = matches[0];
+  if (matches.length !== 1 || asset.state !== 'uploaded' || asset.browser_download_url !== archiveURL
+    || asset.size !== archive.size || asset.digest !== `sha256:${archive.sha256}`) throw new Error('NodePack archive disagrees with its provider asset');
+  return { version: descriptor.version, archiveURL, archiveSize: archive.size, archiveSha256: archive.sha256,
+    descriptorURL: `${DOWNLOAD_ROOT}/${tag}/node-pack.json`, manifestURL: `${DOWNLOAD_ROOT}/${tag}/node-pack-manifest.json` };
 }
 
 export async function discoverMacRelease(github, floor, transport = fetch, publicKey = SPARKLE_PUBLIC_KEY) {
@@ -75,7 +119,13 @@ export async function discoverMacRelease(github, floor, transport = fetch, publi
   if (!newest || (base && newest.build === base.build)) {
     if (newest && newest.version !== base.version) throw new Error(`Mac release ${newest.tag} disagrees with the committed floor`);
     await verifyPublishedDownload(base, github, transport);
-    return { record: base, appcast: null, policy: null, signature: null };
+    let nodePack = null;
+    if (base) {
+      const published = await github.request(`${REPOSITORY}/releases/tags/macos-v${base.version}-${base.build}`);
+      const assets = await github.pages(`${REPOSITORY}/releases/${published.id}/assets`);
+      nodePack = await discoverNodePack(assets, `macos-v${base.version}-${base.build}`, transport);
+    }
+    return { record: base, nodePack, appcast: null, policy: null, signature: null };
   }
   const assets = await github.pages(`${REPOSITORY}/releases/${newest.id}/assets`);
   const files = {};
@@ -83,13 +133,14 @@ export async function discoverMacRelease(github, floor, transport = fetch, publi
   const record = validateDownloads(json(utf8(files['downloads.json'], 'Mac release downloads.json'), 'Mac release downloads.json')).macos;
   if (record === null || record.version !== newest.version || record.build !== newest.build) throw new Error(`Mac release ${newest.tag} carries a Downloads record for another release`);
   await verifyPublishedDownload(record, github, transport);
+  const nodePack = await discoverNodePack(assets, newest.tag, transport);
   const appcast = utf8(files['appcast.xml'], 'Mac release appcast.xml');
   crossCheckAppcast(parseAppcast(appcast), { schemaVersion: 1, macos: record });
   const signature = utf8(files['mac-update-policy.json.sig'], 'Mac release update policy signature');
   if (!SIGNATURE_LINE.test(signature)) throw new Error('Update policy signature is malformed');
   const policy = verifyPolicy(files['mac-update-policy.json'], signature, publicKey);
   if (policy.minimumBuild > record.build) throw new Error('Update policy requires a build the discovered release does not offer');
-  return { record, appcast, policy: files['mac-update-policy.json'], signature };
+  return { record, nodePack, appcast, policy: files['mac-update-policy.json'], signature };
 }
 
 export async function liveReleaseChange(github, liveURL, transport = fetch) {
