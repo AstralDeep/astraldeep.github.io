@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+<defs>
+<radialGradient id="tile" cx="50%" cy="40%" r="72%"><stop offset="0" stop-color="#22245c"/><stop offset="1" stop-color="#171940"/></radialGradient>
+<radialGradient id="halo" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="#ffffff" stop-opacity=".9"/><stop offset=".3" stop-color="#d8c9ff" stop-opacity=".45"/><stop offset="1" stop-color="#8f6fe0" stop-opacity="0"/></radialGradient>
+<linearGradient id="sail" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#efe8ff"/><stop offset=".55" stop-color="#b59cf2"/><stop offset="1" stop-color="#7552cf"/></linearGradient>
+<linearGradient id="jib" x1="1" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#d9ccff"/><stop offset="1" stop-color="#8a6ade"/></linearGradient>
+<linearGradient id="hull" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#8ff5ea"/><stop offset=".45" stop-color="#34c6c2"/><stop offset="1" stop-color="#136a7c"/></linearGradient>
+<linearGradient id="wave" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#5537ad"/><stop offset=".5" stop-color="#a88cf2"/><stop offset="1" stop-color="#5a3db8"/></linearGradient>
+<filter id="glow" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="12" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+<clipPath id="clip"><rect x="100" y="100" width="824" height="824" rx="100"/></clipPath>
+</defs>
+<rect x="100" y="100" width="824" height="824" rx="100" fill="url(#tile)"/>
+<g clip-path="url(#clip)">
+<circle cx="512" cy="262" r="118" fill="url(#halo)"/>
+<path d="M512 172 L530 244 L602 262 L530 280 L512 352 L494 280 L422 262 L494 244 Z" fill="#f6f2ff" filter="url(#glow)"/>
+<g fill="#cdbdff"><circle cx="404" cy="196" r="5"/><circle cx="628" cy="208" r="6"/><circle cx="650" cy="318" r="4"/><circle cx="378" cy="314" r="4"/><circle cx="584" cy="164" r="3"/><circle cx="446" cy="150" r="3"/></g>
+<path d="M512 380 V606" stroke="#cbbaff" stroke-width="12" stroke-linecap="round"/>
+<path d="M526 388 C604 444 664 520 684 594 H526 Z" fill="url(#sail)" filter="url(#glow)"/>
+<path d="M498 440 C454 486 420 540 404 594 H498 Z" fill="url(#jib)" opacity=".9"/>
+<path d="M300 616 H724 C708 696 624 744 512 744 C400 744 316 696 300 616 Z" fill="url(#hull)" filter="url(#glow)"/>
+<path d="M338 640 H686" stroke="#c4fff7" stroke-width="9" stroke-linecap="round" opacity=".75"/>
+<path d="M186 790 C276 744 360 744 446 784 C530 824 614 824 700 784 C762 756 812 750 860 760" fill="none" stroke="url(#wave)" stroke-width="34" stroke-linecap="round" filter="url(#glow)"/>
+<path d="M232 860 C318 828 404 830 492 858 C580 886 666 884 790 838" fill="none" stroke="url(#wave)" stroke-width="22" stroke-linecap="round" opacity=".7"/>
+</g>
+</svg>
