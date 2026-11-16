@@ -8,6 +8,16 @@ The committed floor, `data/downloads.json`, points to the immutable Mac 1.8 (69)
 
 This first preview uses an explicit owner-approved, artifact-bound manual publication exception while the protected Mac publisher is being configured. Approval covers ZIP SHA-256 `9eecfa0e88e3425563494849aee48fb195e14bdb7fe9bea4493a722642cd79d9` and enabling immutable releases in `AstralDeep/AstralDeep` only. The release's `release-provenance.json` states its verified scope and limits. It does not claim canonical protected-publisher approval or complete computer-harness qualification, and it does not authorize another release. Later releases follow the automated flow below.
 
+## Personal mesh compatibility
+
+Mac 2.0.24 (97) uses roster v2, matching meshes created by iPhone build 99. Mac build 96 uses roster v1 and cannot join those meshes. The update retains the old v1 mesh data in its inactive namespace; it does not automatically migrate that mesh or history. Do not delete the old mesh directory or Keychain items to make pairing succeed.
+
+On the updated Mac, choose **Join My Mesh**, then **Show a code on this device instead**. On the iPhone already in the mesh, choose **Devices → Add Device → The new device shows a code instead → Continue → Scan Code**, then scan the Mac's QR code. Compare the code on both devices and approve on the iPhone.
+
+Instead of scanning, use **Copy** or **Share** to transfer the whole invitation or pairing request. Joining requires that full payload or its QR code. The short displayed digits are for comparison or reference, not a join input. Personal mesh creation and joining do not require server sign-in; the optional server connection is separate.
+
+Publish this compatibility copy only after the matching Mac DMG and its release metadata have been verified. The normal release discovery below updates the download and feed; a new candidate or successful build alone is not a published installer.
+
 ## Publish a qualified release
 
 Releases are automatic. After CI passes on AstralDeep `main`, its release workflow builds, signs, notarizes and staples a DMG, then publishes an immutable stable `macos-v<version>-<build>` release in `AstralDeep/AstralDeep` that is never marked Latest. The owner can publish the same way from their Mac with `scripts/release_macos.py --publish`. Each release carries `AstralDeep-<version>-<build>-arm64.dmg`, `SHA256SUMS`, `release-provenance.json`, its notes `.md`, and four site files: `downloads.json`, `appcast.xml`, `mac-update-policy.json` and `mac-update-policy.json.sig`. This site never signs, notarizes or publishes packages and holds no cross-repository credential.
