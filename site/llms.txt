@@ -12,9 +12,9 @@
 - [Board JSON](https://astraldeep.github.io/data/board.json): published snapshot; generatedAt indicates freshness.
 
 ## Repositories
-- [AstralDeep](https://github.com/AstralDeep/AstralDeep): orchestration, identity, and protocol integrations.
+- [AstralDeep](https://github.com/AstralDeep/AstralDeep): orchestration, identity, and protocol integrations, including AstralPlane.
 - [AstralProjection](https://github.com/AstralDeep/AstralProjection): rendering, native clients, and voice.
-- [AstralPlane](https://github.com/AstralDeep/AstralPlane): durable state and storage contracts.
+- [AstralPlane](https://github.com/AstralDeep/AstralDeep/tree/main/plane): durable state and storage contracts, part of AstralDeep.
 - [AstralPrimitives](https://github.com/AstralDeep/AstralPrimitives): UI definitions and serialization.
 - [LETS](https://github.com/AstralDeep/LETS): lineage, escrowed resources, and execution authority.
 

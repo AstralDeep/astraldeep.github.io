@@ -1,6 +1,6 @@
 # AstralDeep contributor and LLM guide
 
-Purpose: help contributors deliver reviewed work across AstralDeep, AstralProjection, AstralPlane, AstralPrimitives, and LETS. The public board covers only these five public repositories. It is not a product runtime or an authentication authority.
+Purpose: help contributors deliver reviewed work across AstralDeep, AstralProjection, AstralPlane, AstralPrimitives, and LETS. AstralPlane now lives inside AstralDeep under `plane/`, and its old repository is archived. The public board covers only these public repositories. It is not a product runtime or an authentication authority.
 
 Priorities: standard MCP and Agent2Agent interoperability; reliable voice across clients, especially mobile; stronger security through LETS; independently usable components and documented public interfaces. A protocol compatibility claim must identify its version and retained test evidence.
 
