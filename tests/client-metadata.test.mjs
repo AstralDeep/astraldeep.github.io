@@ -18,9 +18,19 @@ test('built site publishes the client metadata and app-link association files', 
 
     const metadata = JSON.parse(await readFile(join(root, '_site/oauth/client-metadata.json'), 'utf8'));
     assert.equal(metadata.client_id, `${ORIGIN}/oauth/client-metadata.json`);
-    assert.deepEqual(metadata.redirect_uris, [`${ORIGIN}/oauth/callback`]);
+    assert.deepEqual(metadata.redirect_uris, [`${ORIGIN}/oauth/callback`, 'http://127.0.0.1/callback', 'http://[::1]/callback']);
+    assert.deepEqual(metadata.grant_types, ['authorization_code', 'refresh_token', 'urn:ietf:params:oauth:grant-type:device_code']);
     assert.equal(metadata.token_endpoint_auth_method, 'none');
+    assert.equal(metadata.redirect_uris.some((uri) => uri.includes('*')), false);
     assert.doesNotMatch(JSON.stringify(metadata), /secret/i);
+
+    const callback = await readFile(join(root, '_site/oauth/callback/index.html'), 'utf8');
+    assert.match(callback, /<meta name="referrer" content="no-referrer">/);
+    assert.doesNotMatch(callback, /<script\b/i);
+    assert.doesNotMatch(callback, /<form\b/i);
+    assert.doesNotMatch(callback, /<(img|link|iframe|source|video|audio)\b[^>]*\b(src|href)="https?:/i);
+    assert.match(callback, /<link rel="stylesheet" href="\.\.\/\.\.\/styles\.css">/);
+    assert.match(callback, /<h1>[^<]+<\/h1>/);
 
     const association = JSON.parse(await readFile(join(root, '_site/.well-known/apple-app-site-association'), 'utf8'));
     assert.deepEqual(association.applinks.details[0].appIDs, [APP_ID]);
