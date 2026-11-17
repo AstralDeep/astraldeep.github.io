@@ -2,7 +2,7 @@
 
 [Downloads](https://astraldeep.github.io/downloads.html) · [Bounty board](https://astraldeep.github.io/bounties.html) · [Leaderboard](https://astraldeep.github.io/leaderboard.html) · [Contributor guide](https://astraldeep.github.io/contribute.html)
 
-An independent GitHub Pages site coordinating point bounties across AstralDeep, AstralProjection, AstralPlane, AstralPrimitives, and LETS. Its priorities are protocol interoperability, reliable cross-client voice, LETS security, and reusable components. Points recognize accepted contributions; they are not money.
+An independent GitHub Pages site coordinating point bounties across AstralDeep, AstralProjection, AstralPlane (now part of AstralDeep under `plane/`), AstralPrimitives, and LETS. Its priorities are protocol interoperability, reliable cross-client voice, LETS security, and reusable components. Points recognize accepted contributions; they are not money.
 
 The ecosystem page includes a 2:17 slide introduction about bounded agent delegation and validated generative UI. Narration uses LLM Factory's `speaches-ai/Kokoro-82M-v1.0-ONNX` model and `af_heart` voice. The same-origin H.264/AAC video includes an English subtitle track, with default WebVTT closed captions and a separate text transcript for the web player. It describes the project's design and contributor goals. [Editable slides and story sources](docs/INTRODUCTION.md) support future updates.
 
