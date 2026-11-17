@@ -34,7 +34,7 @@ test('built site publishes the client metadata and app-link association files', 
 
     const association = JSON.parse(await readFile(join(root, '_site/.well-known/apple-app-site-association'), 'utf8'));
     assert.deepEqual(association.applinks.details[0].appIDs, [APP_ID]);
-    assert.deepEqual(association.applinks.details[0].components, [{ '/': '/oauth/callback' }]);
+    assert.deepEqual(association.applinks.details[0].components, [{ '/': '/oauth/callback' }, { '/': '/contact/' }]);
     assert.deepEqual(association.webcredentials.apps, [APP_ID]);
 
     await readFile(join(root, '_site/.nojekyll'));

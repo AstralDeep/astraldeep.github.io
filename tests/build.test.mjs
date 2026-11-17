@@ -41,7 +41,7 @@ test('build excludes internal drafts, safely embeds data, and fails deployment w
     }
     assert.match(await readFile(join(root, '_site/contribute.html'), 'utf8'), /successfully merge it into main/);
     const published = await readdir(join(root, '_site'));
-    assert.deepEqual(published.sort(), ['.nojekyll', '.well-known', 'AstralVessel', 'app.js', 'assets', 'bounties.html', 'contribute.html', 'data', 'downloads.html', 'index.html', 'leaderboard.html', 'llms-full.txt', 'llms.txt', 'oauth', 'robots.txt', 'sitemap.xml', 'styles.css', 'theme.js'].sort());
+    assert.deepEqual(published.sort(), ['.nojekyll', '.well-known', 'AstralVessel', 'app.js', 'assets', 'bounties.html', 'contact', 'contribute.html', 'data', 'downloads.html', 'index.html', 'leaderboard.html', 'llms-full.txt', 'llms.txt', 'oauth', 'robots.txt', 'sitemap.xml', 'styles.css', 'theme.js'].sort());
     assert.deepEqual(await checkDocs(join(root, '_site/AstralVessel')), []);
     assert.deepEqual((await readdir(join(root, '_site/data'))).sort(), ['board.json', 'downloads.json']);
     assert.deepEqual(JSON.parse(await readFile(join(root, '_site/data/downloads.json'), 'utf8')), { schemaVersion: 1, macos: null });
