@@ -8,6 +8,9 @@
         "components": [
           {
             "/": "/oauth/callback"
+          },
+          {
+            "/": "/contact/"
           }
         ]
       }
