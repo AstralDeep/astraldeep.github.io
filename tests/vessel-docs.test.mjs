@@ -65,12 +65,12 @@ test('a missing or malformed manifest fails', async () => {
   } finally { await rm(root, { recursive: true, force: true }); }
 });
 
-test('the committed site copy passes the CLI, names 25a056c and covers the 24 live sitemap pages', async () => {
+test('the committed site copy passes the CLI, names 8e1feae and covers the 25 live sitemap pages', async () => {
   const run = spawnSync(process.execPath, ['scripts/vessel-docs.mjs', '--check', 'site/AstralVessel'], { encoding: 'utf8' });
   assert.equal(run.status, 0, run.stderr);
   const manifest = JSON.parse(await readFile('site/AstralVessel/astral-docs.json', 'utf8'));
-  assert.ok(manifest.commit.startsWith('25a056c'));
-  assert.equal((await readFile('site/AstralVessel/sitemap.xml', 'utf8')).match(/<loc>/g).length, 24);
+  assert.ok(manifest.commit.startsWith('8e1feae'));
+  assert.equal((await readFile('site/AstralVessel/sitemap.xml', 'utf8')).match(/<loc>/g).length, 25);
   assert.equal(spawnSync(process.execPath, ['scripts/vessel-docs.mjs'], { encoding: 'utf8' }).status, 2);
 });
 
