@@ -3,7 +3,7 @@
 import { cp, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
 import { summarize } from './model.mjs';
-import { renderMacDownload, renderNodePackDownload, validateDownloads } from './downloads.mjs';
+import { renderMacDownload, renderNodePackDownload, renderLinuxNodePackDownload, validateDownloads } from './downloads.mjs';
 import { checkMacUpdateFeed } from './appcast.mjs';
 import { discoverMacRelease } from './release-discovery.mjs';
 import { GitHub } from './github.mjs';
@@ -12,7 +12,7 @@ const config = JSON.parse(await readFile('data/config.json', 'utf8'));
 const floor = validateDownloads(JSON.parse(await readFile('data/downloads.json', 'utf8')));
 await checkMacUpdateFeed('site', floor);
 const release = process.argv.includes('--preview')
-  ? { record: null, nodePack: null, appcast: null, policy: null, signature: null }
+  ? { record: null, nodePack: null, linuxNodePack: null, appcast: null, policy: null, signature: null }
   : await discoverMacRelease(new GitHub(process.env.GITHUB_TOKEN || ''), floor.macos);
 const downloads = { schemaVersion: 1, macos: release.record };
 let board;
@@ -44,6 +44,7 @@ for (const filename of ['index.html', 'downloads.html', 'bounties.html', 'leader
   for (const [asset, versioned] of assetVersions) html = html.replaceAll(`="${asset}"`, `="${versioned}"`);
   html = html.replace('<!-- MAC_DOWNLOAD -->', renderMacDownload(downloads.macos));
   html = html.replace('<!-- NODE_PACK_DOWNLOAD -->', renderNodePackDownload(release.nodePack));
+  html = html.replace('<!-- LINUX_NODE_PACK_DOWNLOAD -->', renderLinuxNodePackDownload(release.linuxNodePack));
   await writeFile(`_site/${filename}`, html.replace('<!-- BOARD_DATA -->', `<script type="application/json" id="board-data">${safeJSON}</script>`));
 }
 await writeFile('_site/data/board.json', `${JSON.stringify(board, null, 2)}\n`);

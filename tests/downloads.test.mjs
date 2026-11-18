@@ -2,7 +2,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
-import { renderMacDownload, renderNodePackDownload, validateDownloads, verifyPublishedDownload } from '../scripts/downloads.mjs';
+import { renderLinuxNodePackDownload, renderMacDownload, renderNodePackDownload, validateDownloads, verifyPublishedDownload } from '../scripts/downloads.mjs';
 
 const release = () => ({
   version: '1.8', build: 69, minimumMacOS: '14.0', architecture: 'arm64', format: 'dmg', channel: 'stable',
@@ -52,6 +52,21 @@ test('NodePack download remains unavailable until provider verification supplies
   assert.match(html, /139\.7 MB/);
   assert.match(html, /Offer descriptor/);
   assert.match(html, new RegExp('d'.repeat(64)));
+  assert.doesNotMatch(html, /target="_blank"|onclick|<script/);
+});
+
+test('the Linux node pack card appears only for a verified offer', () => {
+  assert.equal(renderLinuxNodePackDownload(null), '');
+  const html = renderLinuxNodePackDownload({
+    version: '3.11.18-4d541de5-eb9821f', archiveURL: 'https://github.com/AstralDeep/AstralDeep/releases/download/macos-v2.1.0-106/astral-node-pack-3.11.18-4d541de5-eb9821f-linux-x86_64.tar.gz',
+    archiveSize: 652640352, archiveSha256: 'e'.repeat(64),
+    descriptorURL: 'https://github.com/AstralDeep/AstralDeep/releases/download/macos-v2.1.0-106/node-pack-linux-x86_64.json',
+    manifestURL: 'https://github.com/AstralDeep/AstralDeep/releases/download/macos-v2.1.0-106/node-pack-linux-x86_64-manifest.json'
+  });
+  assert.match(html, /<h2>Linux node pack<\/h2>/);
+  assert.match(html, /Download Linux x86_64 node pack/);
+  assert.match(html, /622\.4 MB/);
+  assert.match(html, new RegExp('e'.repeat(64)));
   assert.doesNotMatch(html, /target="_blank"|onclick|<script/);
 });
 
