@@ -50,13 +50,13 @@ test('discovery returns the verified floor when nothing newer is published', asy
   const world = new ReleaseWorld();
   const floor = floorRelease(world);
   world.publish('1.7', 68);
-  assert.deepEqual(await discover(world, floor), { record: floor, nodePack: null, appcast: null, policy: null, signature: null });
+  assert.deepEqual(await discover(world, floor), { record: floor, nodePack: null, linuxNodePack: null, appcast: null, policy: null, signature: null });
   assert.ok(world.calls.includes('https://api.github.com/repos/AstralDeep/AstralDeep/releases/tags/macos-v1.8-69'));
   assert.ok(world.calls.includes(floor.checksumsURL));
   for (const name of Object.keys(ASSET_LIMITS)) assert.deepEqual(downloadsOf(name, world), []);
 
   const empty = new ReleaseWorld();
-  assert.deepEqual(await discover(empty, null), { record: null, nodePack: null, appcast: null, policy: null, signature: null });
+  assert.deepEqual(await discover(empty, null), { record: null, nodePack: null, linuxNodePack: null, appcast: null, policy: null, signature: null });
   assert.deepEqual(empty.calls, ['https://api.github.com/repos/AstralDeep/AstralDeep/releases?per_page=100&page=1']);
 
   const unlisted = new ReleaseWorld();
@@ -70,6 +70,35 @@ test('discovery returns the verified floor when nothing newer is published', asy
   renamed.publish('1.8.0', 69, { channel: 'preview', format: 'zip', feed: false });
   await assert.rejects(discover(renamed, recorded), /disagrees with the committed floor/);
   await assert.rejects(discover(world, { ...floor, url: 'https://example.com/AstralDeep.zip' }), /links disagree/);
+});
+
+test('the Linux x86_64 pack is offered beside the Mac pack and checked the same way', async () => {
+  const world = new ReleaseWorld();
+  const entry = world.publish('2.1.0', 106);
+  addNodePack(world, entry);
+  const { descriptor } = addNodePack(world, entry, 'linux-x86_64');
+  const found = await discover(world, null);
+  assert.deepEqual(found.linuxNodePack, {
+    version: descriptor.version,
+    archiveURL: `https://github.com/AstralDeep/AstralDeep/releases/download/${entry.tag}/${descriptor.archive.file}`,
+    archiveSize: descriptor.archive.size,
+    archiveSha256: descriptor.archive.sha256,
+    descriptorURL: `https://github.com/AstralDeep/AstralDeep/releases/download/${entry.tag}/node-pack-linux-x86_64.json`,
+    manifestURL: `https://github.com/AstralDeep/AstralDeep/releases/download/${entry.tag}/node-pack-linux-x86_64-manifest.json`
+  });
+  assert.ok(found.nodePack.archiveURL.endsWith('-macos-arm64.tar.gz'));
+
+  const macOnly = new ReleaseWorld();
+  addNodePack(macOnly, macOnly.publish('2.1.0', 106));
+  assert.equal((await discover(macOnly, null)).linuxNodePack, null);
+
+  const wrong = new ReleaseWorld();
+  const published = wrong.publish('2.1.0', 106);
+  addNodePack(wrong, published, 'linux-x86_64');
+  const bytes = JSON.parse(published.files['node-pack-linux-x86_64.json'].toString());
+  bytes.platform = 'macos-arm64';
+  wrong.replaceAsset(published, 'node-pack-linux-x86_64.json', `${JSON.stringify(bytes)}\n`);
+  await assert.rejects(discover(wrong, null), /NodePack descriptor is invalid/);
 });
 
 test('NodePack offer is exposed only when the descriptor, manifest and provider archive identity agree', async () => {

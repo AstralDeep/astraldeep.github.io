@@ -113,23 +113,26 @@ export class ReleaseWorld {
   }
 }
 
-export function addNodePack(world, entry) {
+export function addNodePack(world, entry, platform = 'macos-arm64') {
   const version = '3.11.18-540fc9a7-ed5ad22';
-  const archiveBytes = Buffer.from('qualified node pack archive fixture');
-  const archive = { file: `astral-node-pack-${version}-macos-arm64.tar.gz`, size: archiveBytes.length, sha256: createHash('sha256').update(archiveBytes).digest('hex') };
+  const names = platform === 'macos-arm64'
+    ? { descriptor: 'node-pack.json', manifest: 'node-pack-manifest.json' }
+    : { descriptor: `node-pack-${platform}.json`, manifest: `node-pack-${platform}-manifest.json` };
+  const archiveBytes = Buffer.from(`qualified ${platform} node pack archive fixture`);
+  const archive = { file: `astral-node-pack-${version}-${platform}.tar.gz`, size: archiveBytes.length, sha256: createHash('sha256').update(archiveBytes).digest('hex') };
   const manifest = {
-    format: 'astral.nodepack-manifest/v1', version, platform: 'macos-arm64', installed_bytes: 461500000,
+    format: 'astral.nodepack-manifest/v1', version, platform, installed_bytes: 461500000,
     deep: { repository: 'AstralDeep/AstralDeep', commit: `540fc9a7${'0'.repeat(32)}` },
     kernel: { repository: 'AstralDeep/AstralKernel', commit: `ed5ad22${'1'.repeat(33)}`, wheel: 'astralkernel.whl', mailbox: 'mailbox' },
     components: [], requirements: [], files: []
   };
   const manifestBytes = Buffer.from(`${JSON.stringify(manifest)}\n`);
   const descriptor = {
-    format: 'astral.nodepack-descriptor/v1', platform: 'macos-arm64', version, archive,
+    format: 'astral.nodepack-descriptor/v1', platform, version, archive,
     installed_bytes: manifest.installed_bytes, manifest_sha256: createHash('sha256').update(manifestBytes).digest('hex')
   };
-  world.addAsset(entry, 'node-pack.json', `${JSON.stringify(descriptor)}\n`);
-  world.addAsset(entry, 'node-pack-manifest.json', manifestBytes);
+  world.addAsset(entry, names.descriptor, `${JSON.stringify(descriptor)}\n`);
+  world.addAsset(entry, names.manifest, manifestBytes);
   world.addAsset(entry, archive.file, archiveBytes);
   return { descriptor, manifest };
 }

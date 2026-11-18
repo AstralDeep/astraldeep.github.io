@@ -35,6 +35,15 @@ export function renderMacDownload(release) {
 <details class="download-integrity"><summary>SHA-256</summary><code>${mac.sha256}</code></details>`;
 }
 
+export function renderLinuxNodePackDownload(pack) {
+  if (pack === null) return '';
+  const size = `${(pack.archiveSize / 1048576).toFixed(1)} MB`;
+  return `<h2>Linux node pack</h2><p class="download-version">${pack.version}</p>
+<a class="button primary download-action" id="download-linux-node-pack" href="${pack.archiveURL}">Download Linux x86_64 node pack <span class="download-size">${size}</span></a>
+<div class="download-links"><a href="${pack.descriptorURL}">Offer descriptor</a><a href="${pack.manifestURL}">Pack manifest</a></div>
+<details class="download-integrity"><summary>SHA-256</summary><code>${pack.archiveSha256}</code></details>`;
+}
+
 export function renderNodePackDownload(pack) {
   if (pack === null) return '<p class="download-status" role="status">Optional pack release in preparation</p>';
   const size = `${(pack.archiveSize / 1048576).toFixed(1)} MB`;
