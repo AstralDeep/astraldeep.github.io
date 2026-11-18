@@ -37,7 +37,7 @@ test('malformed corrections are refused', () => {
   assert.throws(() => loadCorrections({ ...committed, awardResolutions: [unsigned] }), /Invalid award resolution/);
   for (const bad of [[null], ['text'], [[]], {}, 'text', null]) assert.throws(() => loadCorrections({ ...committed, awardResolutions: bad }), /Invalid award resolution/);
   assert.throws(() => loadCorrections({ ...committed, awardResolutions: [resolution, resolution] }), /Invalid award resolution/);
-  for (const change of [{ extra: 1 }, { key: 'nonsense' }, { key: 7 }, { key: 'AstralDeep/Other#1' }, { pr: 'https://github.com/AstralDeep/AstralPrimitives/pull/0' }, { pr: 'https://github.com/AstralDeep/AstralPlane/pull/58' }, { pr: 58 }, { userId: 0 }, { points: 7 }, { status: 'verified' }, { reason: ' ' }, { approvedBy: 0 }]) {
+  for (const change of [{ extra: 1 }, { key: 'nonsense' }, { key: 7 }, { key: 'AstralDeep/Other#1' }, { pr: 'https://github.com/AstralDeep/AstralPrimitives/pull/0' }, { pr: 'https://github.com/AstralDeep/LETS/pull/58' }, { pr: 58 }, { userId: 0 }, { points: 7 }, { status: 'verified' }, { reason: ' ' }, { approvedBy: 0 }]) {
     assert.throws(() => loadCorrections({ ...committed, unavailableAwardEvidence: [{ ...entry, ...change }] }), /Invalid award evidence correction/);
   }
   assert.throws(() => loadCorrections({ ...committed, unavailableAwardEvidence: [entry, entry] }), /Invalid award evidence correction/);

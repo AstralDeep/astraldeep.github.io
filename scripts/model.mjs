@@ -14,6 +14,12 @@ export function parseTask(value, config) {
   return { repository: match[1], number: Number(match[2]), key: taskKey(match[1], Number(match[2])) };
 }
 
+export function parseRetiredTask(value, config) {
+  const match = /^https:\/\/github\.com\/([^/]+\/[^/]+)\/issues\/([1-9]\d*)$/.exec(value.trim());
+  if (!match || !(config.retiredRepositories || []).includes(match[1])) return null;
+  return { repository: match[1], number: Number(match[2]), key: taskKey(match[1], Number(match[2])) };
+}
+
 export function taskFromIssue(repository, issue, config) {
   const labels = issue.labels.map(label => typeof label === 'string' ? label : label.name);
   if (issue.pull_request || !labels.includes(config.bountyLabel)) return null;
@@ -33,9 +39,10 @@ export function validateAwards(awards, tasks, config) {
   const seen = new Set();
   const prs = new Set();
   for (const award of awards) {
-    const target = parseTask(award.issue, config);
-    const task = target && tasks.find(item => item.key === target.key);
-    if (!task || task.state !== 'closed' || task.stateReason !== 'completed') throw new Error('Awards require a completed approved bounty');
+    const retired = parseRetiredTask(award.issue, config);
+    const target = retired || parseTask(award.issue, config);
+    const task = retired ? { key: retired.key, points: award.points } : target && tasks.find(item => item.key === target.key);
+    if (!retired && (!task || task.state !== 'closed' || task.stateReason !== 'completed')) throw new Error('Awards require a completed approved bounty');
     if (seen.has(task.key)) throw new Error('Duplicate task award');
     if (prs.has(award.pr)) throw new Error('A PR can only earn one bounty award');
     if (!config.points.includes(award.points) || award.points !== task.points) throw new Error('Award points must match the approved issue');

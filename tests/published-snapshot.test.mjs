@@ -9,12 +9,12 @@ import { loadPublishedSnapshot, validatePublishedSnapshot } from '../scripts/pub
 const config = JSON.parse(readFileSync('data/config.json', 'utf8'));
 function fixture() {
   const tasks = [20, 21].map(number => ({
-    key: `AstralDeep/AstralPlane#${number}`, repository: 'AstralDeep/AstralPlane', number,
-    url: `https://github.com/AstralDeep/AstralPlane/issues/${number}`, title: 'Approved public task',
+    key: `AstralDeep/LETS#${number}`, repository: 'AstralDeep/LETS', number,
+    url: `https://github.com/AstralDeep/LETS/issues/${number}`, title: 'Approved public task',
     points: 50, state: 'closed', stateReason: 'completed', tracks: ['security'], priority: 'P2'
   }));
   const awards = tasks.map((task, index) => ({
-    policy: 'main-merge', issue: task.url, pr: `https://github.com/AstralDeep/AstralPlane/pull/${25 + index}`,
+    policy: 'main-merge', issue: task.url, pr: `https://github.com/AstralDeep/LETS/pull/${25 + index}`,
     userId: 1234, login: 'contributor', points: 50, awardedAt: '2026-10-10T12:00:00Z'
   }));
   const board = summarize(tasks, awards.map(award => ({ ...award, displayLogin: 'renamed-contributor' })), '2026-10-11T13:29:54.374Z');
