@@ -4,10 +4,11 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { NO_RECORDED_MERGER, mergedAward, reconcileAwards } from '../scripts/awards.mjs';
 import { synchronize } from '../scripts/sync.mjs';
+import { validateAwards } from '../scripts/model.mjs';
 import { GitHub } from '../scripts/github.mjs';
 
 const config = JSON.parse(readFileSync('data/config.json', 'utf8'));
-const repository = 'AstralDeep/AstralPlane';
+const repository = 'AstralDeep/AstralPrimitives';
 const author = { id: 1234, login: 'contributor', type: 'User' };
 const merger = { id: 5678, login: 'other-maintainer', type: 'User' };
 const task = { key: `${repository}#20`, repository, number: 20, url: `https://github.com/${repository}/issues/20`, points: 50, state: 'closed', stateReason: 'completed' };
@@ -33,7 +34,7 @@ test('main merges automatically credit the author without claims, assignments, o
 test('only same-repository completed main merges with actual PR closure evidence qualify', () => {
   for (const close of [null, { ...closure, closer: null }, { ...closure, closer: { __typename: 'Commit', url: pr.html_url } }, { ...closure, closer: { __typename: 'PullRequest', url: pr.html_url + '0' } }]) assert.equal(credit(pr, close), null);
   for (const change of [{ state: 'open' }, { stateReason: 'not_planned' }, { repository: 'AstralDeep/LETS' }]) assert.equal(credit(pr, closure, { ...task, ...change }), null);
-  for (const change of [{ merged_at: null }, { base: { ref: 'release', repo: { full_name: repository } } }, { base: { ref: 'main', repo: { full_name: 'contributor/AstralPlane' } } }, { base: null }]) assert.equal(credit({ ...pr, ...change }), null);
+  for (const change of [{ merged_at: null }, { base: { ref: 'release', repo: { full_name: repository } } }, { base: { ref: 'main', repo: { full_name: 'contributor/AstralPrimitives' } } }, { base: null }]) assert.equal(credit({ ...pr, ...change }), null);
   for (const change of [{ created_at: 'bad' }, { created_at: now }, { merged_at: now }, { head: {} }, { merge_commit_sha: 'bad' }, { merged_by: { login: merger.login } }, { user: { login: author.login } }]) assert.throws(() => credit({ ...pr, ...change }));
   assert.throws(() => credit(pr, { ...closure, id: null }), /closure identity/);
   assert.throws(() => credit(pr, { ...closure, createdAt: '2026-10-11T00:00:00Z' }), /dates/);
@@ -104,7 +105,7 @@ test('sync ignores reservation history and assignments and automatically credits
   const original = structuredClone(claims);
   const result = await synchronize(live, config, claims, [], now);
   assert.equal(result.awards.length, 1); assert.equal(result.board.leaderboard[0].points, 50); assert.equal(result.board.tasks[0].status, 'completed');
-  assert.equal('claims' in result.board, false); assert.equal('claim' in result.board.tasks[0], false); assert.deepEqual(claims, original); assert.equal(calls.length, 5);
+  assert.equal('claims' in result.board, false); assert.equal('claim' in result.board.tasks[0], false); assert.deepEqual(claims, original); assert.equal(calls.length, 4);
   assert.deepEqual(result.unawarded, []);
   const skipped = await synchronize({ ...live, request: async path => path.includes('/pulls/') ? { ...pr, merged_by: null } : { has_issues: true } }, config, claims, [], now);
   assert.deepEqual(skipped.awards, []); assert.equal(skipped.board.tasks[0].status, 'closed'); assert.deepEqual(skipped.unawarded.map(item => item.reason), [NO_RECORDED_MERGER]);
@@ -114,7 +115,7 @@ test('closure lookup sends a bounded read-only query and fails on missing provid
   const good = { data: { repository: { issue: { timelineItems: { nodes: [closure] } } } } };
   const client = new GitHub('test-only', async (url, options) => {
     assert.equal(url, 'https://api.github.com/graphql'); assert.equal(options.redirect, 'error'); assert.equal(options.headers.Authorization, 'Bearer test-only');
-    const body = JSON.parse(options.body); assert.match(body.query, /last:1/); assert.ok(!body.query.includes('mutation')); assert.deepEqual(body.variables, { owner: 'AstralDeep', name: 'AstralPlane', number: 20 });
+    const body = JSON.parse(options.body); assert.match(body.query, /last:1/); assert.ok(!body.query.includes('mutation')); assert.deepEqual(body.variables, { owner: 'AstralDeep', name: 'AstralPrimitives', number: 20 });
     return { ok: true, json: async () => good };
   });
   assert.deepEqual(await client.closedBy(repository, 20), closure);
@@ -123,4 +124,17 @@ test('closure lookup sends a bounded read-only query and fails on missing provid
   for (const body of [{ errors: [{ message: 'no access' }], ...good }, { data: {} }]) await assert.rejects(new GitHub('', async () => ({ ok: true, json: async () => body })).closedBy(repository, 20), /Incomplete/);
   good.data.repository.issue.timelineItems.nodes = [];
   assert.equal(await client.closedBy(repository, 20), null);
+});
+
+test('a retired repository keeps its finished awards on the board without being scanned', async () => {
+  const retired = { ...credit(), issue: 'https://github.com/AstralDeep/AstralPlane/issues/20', pr: 'https://github.com/AstralDeep/AstralPlane/pull/25', policy: 'maintainer-merge' };
+  const calls = [];
+  const live = { ...api, request: async () => ({ has_issues: true }), pages: async path => { calls.push(path); return []; } };
+  const result = await synchronize(live, config, {}, [retired], now);
+  assert.ok(calls.every(path => !path.includes('AstralPlane')));
+  assert.deepEqual(result.awards, [retired]);
+  assert.equal(result.board.leaderboard[0].points, retired.points);
+  assert.throws(() => validateAwards([retired, retired], [], config), /Duplicate task award/);
+  assert.throws(() => validateAwards([{ ...retired, pr: 'https://github.com/AstralDeep/LETS/pull/25' }], [], config), /Award PR must be in the task repository/);
+  assert.throws(() => validateAwards([{ ...retired, points: 7 }], [], config), /Award points must match/);
 });

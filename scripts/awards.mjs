@@ -1,5 +1,5 @@
 // Credits PR authors after verified main merges close approved bounties and rechecks preserved historical awards.
-import { accountId, validateAwards, verifyAwardEvidence } from './model.mjs';
+import { accountId, parseRetiredTask, validateAwards, verifyAwardEvidence } from './model.mjs';
 import { confirmResolution, loadCorrections, resolutionFor, unavailableFor } from './corrections.mjs';
 
 export const NO_RECORDED_MERGER = 'GitHub records no merger because the pull request reached main inside another merge';
@@ -76,6 +76,9 @@ export async function reconcileAwards(api, config, tasks, historicalClaims, awar
       ledger.push(candidate);
       verified.push({ ...candidate, displayLogin: candidate.login });
     }
+  }
+  for (const award of awards) {
+    if (parseRetiredTask(award.issue, config)) verified.push({ ...award, displayLogin: award.login });
   }
   validateAwards(ledger, tasks, config);
   return { awards: ledger, verified, unawarded, unavailable };
