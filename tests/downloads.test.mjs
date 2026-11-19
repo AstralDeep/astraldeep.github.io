@@ -70,6 +70,36 @@ test('the Linux node pack card appears only for a verified offer', () => {
   assert.doesNotMatch(html, /target="_blank"|onclick|<script/);
 });
 
+test('the Linux arm64 node pack gets its own button beside the x86_64 one', () => {
+  const x86 = {
+    version: '3.11.18-d2f768eb-f108c85', archiveURL: 'https://github.com/AstralDeep/AstralDeep/releases/download/macos-v2.1.1-107/astral-node-pack-3.11.18-d2f768eb-f108c85-linux-x86_64.tar.gz',
+    archiveSize: 652640352, archiveSha256: 'e'.repeat(64),
+    descriptorURL: 'https://github.com/AstralDeep/AstralDeep/releases/download/macos-v2.1.1-107/node-pack-linux-x86_64.json',
+    manifestURL: 'https://github.com/AstralDeep/AstralDeep/releases/download/macos-v2.1.1-107/node-pack-linux-x86_64-manifest.json'
+  };
+  const arm64 = {
+    version: '3.11.18-d2f768eb-f108c85', archiveURL: 'https://github.com/AstralDeep/AstralDeep/releases/download/macos-v2.1.1-107/astral-node-pack-3.11.18-d2f768eb-f108c85-linux-aarch64.tar.gz',
+    archiveSize: 629145600, archiveSha256: 'f'.repeat(64),
+    descriptorURL: 'https://github.com/AstralDeep/AstralDeep/releases/download/macos-v2.1.1-107/node-pack-linux-aarch64.json',
+    manifestURL: 'https://github.com/AstralDeep/AstralDeep/releases/download/macos-v2.1.1-107/node-pack-linux-aarch64-manifest.json'
+  };
+  const both = renderLinuxNodePackDownload(x86, arm64);
+  assert.equal(both.match(/<h2>Linux node pack<\/h2>/g).length, 1);
+  assert.match(both, /id="download-linux-node-pack" href="[^"]*-linux-x86_64\.tar\.gz">Download Linux x86_64 node pack/);
+  assert.match(both, /id="download-linux-arm64-node-pack" href="[^"]*-linux-aarch64\.tar\.gz">Download Linux arm64 node pack/);
+  assert.match(both, /600\.0 MB/);
+  assert.match(both, new RegExp('f'.repeat(64)));
+  assert.doesNotMatch(both, /target="_blank"|onclick|<script/);
+
+  const armOnly = renderLinuxNodePackDownload(null, arm64);
+  assert.match(armOnly, /id="download-linux-arm64-node-pack"/);
+  assert.doesNotMatch(armOnly, /download-linux-node-pack|x86_64 node pack/);
+  const x86Only = renderLinuxNodePackDownload(x86, null);
+  assert.match(x86Only, /id="download-linux-node-pack"/);
+  assert.doesNotMatch(x86Only, /arm64|aarch64/);
+  assert.equal(renderLinuxNodePackDownload(null, null), '');
+});
+
 test('download metadata rejects incomplete, cross-repository and mismatched values', () => {
   for (const manifest of [null, {}, { schemaVersion: 2, macos: null }, { schemaVersion: 1 }, { schemaVersion: 1, macos: [] }]) {
     assert.throws(() => validateDownloads(manifest));

@@ -11,7 +11,8 @@ const SIGNATURE_LINE = /^[A-Za-z0-9+/]{86}==\n?$/;
 export const ASSET_LIMITS = Object.freeze({ 'downloads.json': 16384, 'appcast.xml': 2097152, 'mac-update-policy.json': 4096, 'mac-update-policy.json.sig': 256 });
 const NODE_PACK_ASSETS = Object.freeze({
   'macos-arm64': { descriptor: 'node-pack.json', manifest: 'node-pack-manifest.json' },
-  'linux-x86_64': { descriptor: 'node-pack-linux-x86_64.json', manifest: 'node-pack-linux-x86_64-manifest.json' }
+  'linux-x86_64': { descriptor: 'node-pack-linux-x86_64.json', manifest: 'node-pack-linux-x86_64-manifest.json' },
+  'linux-aarch64': { descriptor: 'node-pack-linux-aarch64.json', manifest: 'node-pack-linux-aarch64-manifest.json' }
 });
 const NODE_PACK_ASSET_LIMITS = Object.freeze(Object.fromEntries(Object.values(NODE_PACK_ASSETS)
   .flatMap(names => [[names.descriptor, 65536], [names.manifest, 33554432]])));
@@ -127,14 +128,16 @@ export async function discoverMacRelease(github, floor, transport = fetch, publi
     await verifyPublishedDownload(base, github, transport);
     let nodePack = null;
     let linuxNodePack = null;
+    let linuxArm64NodePack = null;
     if (base) {
       const tag = `macos-v${base.version}-${base.build}`;
       const published = await github.request(`${REPOSITORY}/releases/tags/${tag}`);
       const assets = await github.pages(`${REPOSITORY}/releases/${published.id}/assets`);
       nodePack = await discoverNodePack(assets, tag, transport);
       linuxNodePack = await discoverNodePack(assets, tag, transport, 'linux-x86_64');
+      linuxArm64NodePack = await discoverNodePack(assets, tag, transport, 'linux-aarch64');
     }
-    return { record: base, nodePack, linuxNodePack, appcast: null, policy: null, signature: null };
+    return { record: base, nodePack, linuxNodePack, linuxArm64NodePack, appcast: null, policy: null, signature: null };
   }
   const assets = await github.pages(`${REPOSITORY}/releases/${newest.id}/assets`);
   const files = {};
@@ -144,13 +147,14 @@ export async function discoverMacRelease(github, floor, transport = fetch, publi
   await verifyPublishedDownload(record, github, transport);
   const nodePack = await discoverNodePack(assets, newest.tag, transport);
   const linuxNodePack = await discoverNodePack(assets, newest.tag, transport, 'linux-x86_64');
+  const linuxArm64NodePack = await discoverNodePack(assets, newest.tag, transport, 'linux-aarch64');
   const appcast = utf8(files['appcast.xml'], 'Mac release appcast.xml');
   crossCheckAppcast(parseAppcast(appcast), { schemaVersion: 1, macos: record });
   const signature = utf8(files['mac-update-policy.json.sig'], 'Mac release update policy signature');
   if (!SIGNATURE_LINE.test(signature)) throw new Error('Update policy signature is malformed');
   const policy = verifyPolicy(files['mac-update-policy.json'], signature, publicKey);
   if (policy.minimumBuild > record.build) throw new Error('Update policy requires a build the discovered release does not offer');
-  return { record, nodePack, linuxNodePack, appcast, policy: files['mac-update-policy.json'], signature };
+  return { record, nodePack, linuxNodePack, linuxArm64NodePack, appcast, policy: files['mac-update-policy.json'], signature };
 }
 
 export async function liveReleaseChange(github, liveURL, transport = fetch) {

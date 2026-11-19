@@ -12,7 +12,7 @@ const config = JSON.parse(await readFile('data/config.json', 'utf8'));
 const floor = validateDownloads(JSON.parse(await readFile('data/downloads.json', 'utf8')));
 await checkMacUpdateFeed('site', floor);
 const release = process.argv.includes('--preview')
-  ? { record: null, nodePack: null, linuxNodePack: null, appcast: null, policy: null, signature: null }
+  ? { record: null, nodePack: null, linuxNodePack: null, linuxArm64NodePack: null, appcast: null, policy: null, signature: null }
   : await discoverMacRelease(new GitHub(process.env.GITHUB_TOKEN || ''), floor.macos);
 const downloads = { schemaVersion: 1, macos: release.record };
 let board;
@@ -44,7 +44,7 @@ for (const filename of ['index.html', 'downloads.html', 'bounties.html', 'leader
   for (const [asset, versioned] of assetVersions) html = html.replaceAll(`="${asset}"`, `="${versioned}"`);
   html = html.replace('<!-- MAC_DOWNLOAD -->', renderMacDownload(downloads.macos));
   html = html.replace('<!-- NODE_PACK_DOWNLOAD -->', renderNodePackDownload(release.nodePack));
-  html = html.replace('<!-- LINUX_NODE_PACK_DOWNLOAD -->', renderLinuxNodePackDownload(release.linuxNodePack));
+  html = html.replace('<!-- LINUX_NODE_PACK_DOWNLOAD -->', renderLinuxNodePackDownload(release.linuxNodePack, release.linuxArm64NodePack));
   await writeFile(`_site/${filename}`, html.replace('<!-- BOARD_DATA -->', `<script type="application/json" id="board-data">${safeJSON}</script>`));
 }
 await writeFile('_site/data/board.json', `${JSON.stringify(board, null, 2)}\n`);

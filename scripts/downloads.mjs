@@ -35,13 +35,19 @@ export function renderMacDownload(release) {
 <details class="download-integrity"><summary>SHA-256</summary><code>${mac.sha256}</code></details>`;
 }
 
-export function renderLinuxNodePackDownload(pack) {
-  if (pack === null) return '';
-  const size = `${(pack.archiveSize / 1048576).toFixed(1)} MB`;
-  return `<h2>Linux node pack</h2><p class="download-version">${pack.version}</p>
-<a class="button primary download-action" id="download-linux-node-pack" href="${pack.archiveURL}">Download Linux x86_64 node pack <span class="download-size">${size}</span></a>
+const linuxNodePackOffers = Object.freeze([
+  { id: 'download-linux-node-pack', label: 'Download Linux x86_64 node pack' },
+  { id: 'download-linux-arm64-node-pack', label: 'Download Linux arm64 node pack' }
+]);
+
+export function renderLinuxNodePackDownload(...packs) {
+  const offers = linuxNodePackOffers.map((offer, index) => ({ offer, pack: packs[index] ?? null })).filter(({ pack }) => pack !== null);
+  if (offers.length === 0) return '';
+  const cards = offers.map(({ offer, pack }) => `<p class="download-version">${pack.version}</p>
+<a class="button primary download-action" id="${offer.id}" href="${pack.archiveURL}">${offer.label} <span class="download-size">${(pack.archiveSize / 1048576).toFixed(1)} MB</span></a>
 <div class="download-links"><a href="${pack.descriptorURL}">Offer descriptor</a><a href="${pack.manifestURL}">Pack manifest</a></div>
-<details class="download-integrity"><summary>SHA-256</summary><code>${pack.archiveSha256}</code></details>`;
+<details class="download-integrity"><summary>SHA-256</summary><code>${pack.archiveSha256}</code></details>`);
+  return `<h2>Linux node pack</h2>${cards.join('\n')}`;
 }
 
 export function renderNodePackDownload(pack) {

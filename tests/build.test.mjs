@@ -89,6 +89,7 @@ test('build renders the newest verified release and writes its discovered feed f
 
     const current = world.publish('2.0.0', 71, { older: [floor] });
     const nodePack = addNodePack(world, current).descriptor;
+    const armPack = addNodePack(world, current, 'linux-aarch64').descriptor;
     const discovered = await run();
     assert.equal(discovered.status, 0, discovered.stderr);
     assert.deepEqual(JSON.parse(await site('data/downloads.json')), { schemaVersion: 1, macos: current.record });
@@ -100,6 +101,8 @@ test('build renders the newest verified release and writes its discovered feed f
     assert.ok(page.includes(`href="${current.record.url}"`));
     assert.ok(page.includes(`href="https://github.com/AstralDeep/AstralDeep/releases/download/${current.tag}/${nodePack.archive.file}"`));
     assert.ok(page.includes('Download optional Mac node and agent pack'));
+    assert.ok(page.includes(`id="download-linux-arm64-node-pack" href="https://github.com/AstralDeep/AstralDeep/releases/download/${current.tag}/${armPack.archive.file}"`));
+    assert.ok(!page.includes('download-linux-node-pack'));
     assert.doesNotMatch(page, /1\.8 \(69\)/);
 
     world.replaceAsset(current, 'appcast.xml', appcastFor([{ ...current.record, bytes: current.record.bytes + 1 }]));

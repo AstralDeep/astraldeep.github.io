@@ -50,13 +50,13 @@ test('discovery returns the verified floor when nothing newer is published', asy
   const world = new ReleaseWorld();
   const floor = floorRelease(world);
   world.publish('1.7', 68);
-  assert.deepEqual(await discover(world, floor), { record: floor, nodePack: null, linuxNodePack: null, appcast: null, policy: null, signature: null });
+  assert.deepEqual(await discover(world, floor), { record: floor, nodePack: null, linuxNodePack: null, linuxArm64NodePack: null, appcast: null, policy: null, signature: null });
   assert.ok(world.calls.includes('https://api.github.com/repos/AstralDeep/AstralDeep/releases/tags/macos-v1.8-69'));
   assert.ok(world.calls.includes(floor.checksumsURL));
   for (const name of Object.keys(ASSET_LIMITS)) assert.deepEqual(downloadsOf(name, world), []);
 
   const empty = new ReleaseWorld();
-  assert.deepEqual(await discover(empty, null), { record: null, nodePack: null, linuxNodePack: null, appcast: null, policy: null, signature: null });
+  assert.deepEqual(await discover(empty, null), { record: null, nodePack: null, linuxNodePack: null, linuxArm64NodePack: null, appcast: null, policy: null, signature: null });
   assert.deepEqual(empty.calls, ['https://api.github.com/repos/AstralDeep/AstralDeep/releases?per_page=100&page=1']);
 
   const unlisted = new ReleaseWorld();
@@ -99,6 +99,71 @@ test('the Linux x86_64 pack is offered beside the Mac pack and checked the same 
   bytes.platform = 'macos-arm64';
   wrong.replaceAsset(published, 'node-pack-linux-x86_64.json', `${JSON.stringify(bytes)}\n`);
   await assert.rejects(discover(wrong, null), /NodePack descriptor is invalid/);
+});
+
+test('the Linux arm64 pack is offered beside the other packs and is optional', async () => {
+  const world = new ReleaseWorld();
+  const entry = world.publish('2.1.1', 107);
+  addNodePack(world, entry);
+  addNodePack(world, entry, 'linux-x86_64');
+  const { descriptor } = addNodePack(world, entry, 'linux-aarch64');
+  const found = await discover(world, null);
+  assert.deepEqual(found.linuxArm64NodePack, {
+    version: descriptor.version,
+    archiveURL: `https://github.com/AstralDeep/AstralDeep/releases/download/${entry.tag}/${descriptor.archive.file}`,
+    archiveSize: descriptor.archive.size,
+    archiveSha256: descriptor.archive.sha256,
+    descriptorURL: `https://github.com/AstralDeep/AstralDeep/releases/download/${entry.tag}/node-pack-linux-aarch64.json`,
+    manifestURL: `https://github.com/AstralDeep/AstralDeep/releases/download/${entry.tag}/node-pack-linux-aarch64-manifest.json`
+  });
+  assert.ok(found.linuxArm64NodePack.archiveURL.endsWith('-linux-aarch64.tar.gz'));
+  assert.ok(found.linuxNodePack.archiveURL.endsWith('-linux-x86_64.tar.gz'));
+  assert.ok(found.nodePack.archiveURL.endsWith('-macos-arm64.tar.gz'));
+
+  const withoutArm64 = new ReleaseWorld();
+  const older = withoutArm64.publish('2.1.0', 106);
+  addNodePack(withoutArm64, older);
+  addNodePack(withoutArm64, older, 'linux-x86_64');
+  const older106 = await discover(withoutArm64, null);
+  assert.equal(older106.linuxArm64NodePack, null);
+  assert.ok(older106.linuxNodePack);
+
+  const floor = new ReleaseWorld();
+  const recorded = floorRelease(floor);
+  const pinned = await discover(floor, recorded);
+  assert.equal(pinned.linuxArm64NodePack, null);
+
+});
+
+test('a Linux arm64 pack with a wrong descriptor, manifest or archive is refused', async () => {
+  const build = () => {
+    const world = new ReleaseWorld();
+    const entry = world.publish('2.1.1', 107);
+    addNodePack(world, entry, 'linux-aarch64');
+    return { world, entry };
+  };
+  const descriptorOf = ({ entry }) => JSON.parse(entry.files['node-pack-linux-aarch64.json'].toString());
+
+  const platform = build();
+  platform.world.replaceAsset(platform.entry, 'node-pack-linux-aarch64.json', `${JSON.stringify({ ...descriptorOf(platform), platform: 'linux-x86_64' })}\n`);
+  await assert.rejects(discover(platform.world, null), /NodePack descriptor is invalid/);
+
+  const archive = build();
+  const wrongArchive = descriptorOf(archive);
+  wrongArchive.archive.file = wrongArchive.archive.file.replace('linux-aarch64', 'linux-x86_64');
+  archive.world.replaceAsset(archive.entry, 'node-pack-linux-aarch64.json', `${JSON.stringify(wrongArchive)}\n`);
+  await assert.rejects(discover(archive.world, null), /NodePack archive identity is invalid/);
+
+  const manifest = build();
+  const wrongManifest = JSON.parse(manifest.entry.files['node-pack-linux-aarch64-manifest.json'].toString());
+  wrongManifest.platform = 'macos-arm64';
+  manifest.world.replaceAsset(manifest.entry, 'node-pack-linux-aarch64-manifest.json', `${JSON.stringify(wrongManifest)}\n`);
+  await assert.rejects(discover(manifest.world, null), /NodePack manifest digest disagrees with descriptor/);
+
+  const missingManifest = build();
+  missingManifest.entry.assets.splice(missingManifest.entry.assets.findIndex(asset => asset.name === 'node-pack-linux-aarch64-manifest.json'), 1);
+  missingManifest.world.json(`/releases/${missingManifest.entry.release.id}/assets?per_page=100&page=1`, missingManifest.entry.assets);
+  await assert.rejects(discover(missingManifest.world, null), /node-pack-linux-aarch64-manifest\.json is missing or ambiguous/);
 });
 
 test('NodePack offer is exposed only when the descriptor, manifest and provider archive identity agree', async () => {
